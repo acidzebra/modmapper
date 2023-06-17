@@ -12,6 +12,7 @@ version = "0.3"
 # 0.1 - initial release
 # 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
 # 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
+# 0.3.1 - now that the panic has subsided, cleaned up the version check a little. Should probably implement a function sometime.
 
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -268,32 +269,20 @@ for files in esplist:
                             modcelllist = modcelllist + ", " + files
                             mastermoddict[str(keys["data"]["grid"])] = modcelllist
                     else:
+                        intcellname = ""
                         if tes3convversion == 0:
-                            if keys["id"]:
-                                intcellname = str(keys["id"])
-                            else:
-                                intcellname = "nope"
-                             
-                            if intcellname not in masterintdict:
-                                masterintdict[intcellname] = str(files)
-                                if moreinfo:
-                                    print("new int cell",intcellname)
-                            else:
-                                intcelllist = masterintdict[intcellname]
-                                intcelllist = intcelllist + ", " + files
-                                masterintdict[intcellname] = intcelllist
+                            intcellname = keys["id"]
                         else:
-                            if keys["name"]:
-                                intcellname = str(keys["name"])
-
-                            if intcellname not in masterintdict:
-                                masterintdict[intcellname] = str(files)
-                                if moreinfo:
-                                    print("new int cell",intcellname)
-                            else:
-                                intcelllist = masterintdict[intcellname]
-                                intcelllist = intcelllist + ", " + files
-                                masterintdict[intcellname] = intcelllist
+                            intcellname = keys["name"]
+                        if intcellname not in masterintdict:
+                            masterintdict[intcellname] = str(files)
+                            if moreinfo:
+                                print("new int cell",intcellname)
+                        else:
+                            intcelllist = masterintdict[intcellname]
+                            intcelllist = intcelllist + ", " + files
+                            masterintdict[intcellname] = intcelllist
+                  
                             
         filecounter+=1
     else:

@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.1"
+version = "0.2"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -9,7 +9,24 @@ version = "0.1"
 #
 # run python modmapper.py "path-to-modfolder"
 # 
+# 0.1 - initial release
+# 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
+
+
 # not tested on anything except Windows OS+(open)MW, English-language versions.
+
+# User-configurable variables, defaults should be fine
+
+# produces a LOT of noise if turned on (pipe output to a file)
+moreinfo = False
+# normally modmapper cleans up after itself, set to False to disable (for repeated runs for instance)
+deletemodjson = True
+# some padding around the map
+tableborder = 5
+# skip these mods if found. You can add any mods you don't want on the map here.
+excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp"]
+
+# ---
 
 import json
 import io
@@ -17,20 +34,6 @@ import sys
 import os
 from os import listdir
 from os.path import isfile, join
-
-# User-configurable variables, defaults should be fine
-moreinfo = False
-deletemodjson = True
-bigexcludelist = False
-tableborder = 5
-excludelist = []
-if bigexcludelist:
-    # this list is not based on anything but the experiments I ran while building this thing, it excludes a lot of TR stuff including old and in-progress, SHotN, CYR, some custom mods I merged, and other bits.
-    excludelist = ["autoclean_cities_vanilla.esp","DN-Lighted_Dwemer_Towers_TR.ESP","TR_merged_az.esm","Clean TR_ShipalShin_v0020.ESP","TR_Mainland.esm","autoclean_cities_TR.ESP","Wares_TR_containers.esp","Wares_TR_npcs_purist.esp","Wares_TR_traders.esp","TR_BCOM_Patch.ESP","TR_Dra-Vashai.ESP","TR_ThirrValley_V0093.ESP","TR_Factions.esp","TR_Islands_v0001.ESP","TR_Restexteriors.ESP","TR_LakeAndaram_v0104.ESP","TR_Othreleth_East_v0002.esp","TR_Hotfix.esp","TR_Mainland_21.esm","TR_Preview_21.esp","RepopulatedMainland.ESP","TR_Mainland","Cyr_Main.esm","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","Sky_Main.esm","Tamriel_Data.esm","TR_Data.esm","Cyrodiil_Grass.ESP","CyrodiilFromOE.ESP","Wares_SHOTN_traders.esp","Price Balance SHotN.ESP","Wares_SHOTN_containers.esp","Wares_SHOTN_npcs_purist.esp","Wares_SHOTN_traders.esp","Solstheim Tomb of The Snow Prince.esm","Interiors_of_Solstheim_V2.1.esp","NPC_Schedule_Plus_TR.esp"]
-else:
-    excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp"]
-
-# ---
 
 html_header = """
 <HTML>
@@ -189,18 +192,8 @@ if not os.path.isfile("tes3conv.exe"):
     sys.exit()
     
 # # TODO rewrite this to be case insensitive
-esplist += [each for each in os.listdir(target_folder) if each.endswith('.esm')]
-esplist += [each for each in os.listdir(target_folder) if each.endswith('.ESM')]
-esplist += [each for each in os.listdir(target_folder) if each.endswith('.esp')]
-esplist += [each for each in os.listdir(target_folder) if each.endswith('.ESP')]
-
-# TO rewrite this to not be necessary (depends on above)
-dedupe_esplist = list()
-for item in esplist:
-    if item not in dedupe_esplist:
-        dedupe_esplist.append(item)
-esplist = []
-esplist = dedupe_esplist
+esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
+esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
 
 for files in esplist:
     if files not in excludelist:
@@ -229,14 +222,14 @@ for files in esplist:
             for keys in modfile_parsed_json:
                 if keys["type"] == "Cell" and len(keys["references"])>0:
                     if "INTERIOR" not in keys["data"]["flags"]:
-                        if int(keys["data"]["grid"][0]) < tablexmin:
-                            tablexmin = int(keys["data"]["grid"][0])
-                        if int(keys["data"]["grid"][0]) > tablexmax:
-                            tablexmax = int(keys["data"]["grid"][0])
-                        if int(keys["data"]["grid"][1]) < tableymin:
-                            tableymin = int(keys["data"]["grid"][1])
-                        if int(keys["data"]["grid"][1]) > tableymax:
-                            tableymax = int(keys["data"]["grid"][1])
+                        if keys["data"]["grid"][0] < tablexmin:
+                            tablexmin = keys["data"]["grid"][0]
+                        if keys["data"]["grid"][0] > tablexmax:
+                            tablexmax = keys["data"]["grid"][0]
+                        if keys["data"]["grid"][1] < tableymin:
+                            tableymin = keys["data"]["grid"][1]
+                        if keys["data"]["grid"][1] > tableymax:
+                            tableymax = keys["data"]["grid"][1]
 # TODO: fix up this list/dict mess, I started using one and switched to the other, then ended up using both. Shitshow. A working shitshow but still.
                         if keys["data"]["grid"] not in modcelltable:
                             modcelltable.append(keys["data"]["grid"])
@@ -354,7 +347,7 @@ for items in masterintdict:
     formattedintlist = formattedintlist + str("""<P>Interior Cell: <b>"""+str(items)+"""</b><BR>Mods:"""+str(masterintdict[items])+"""</P>\n""")
 
 print("exporting HTML")
-html_body = """<p><b>MODMAPPER 0.1</b><br>Examined """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)
+html_body = """<p><b>MODMAPPER 0.1</b><br>Examined """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""</p>"""
 html_body = html_body+"".join(table)
 html_body = html_body+formattedextlist
 html_body = html_body+formattedintlist

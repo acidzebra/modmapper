@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.2"
+version = "0.3"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -11,7 +11,7 @@ version = "0.2"
 # 
 # 0.1 - initial release
 # 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
-
+# 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
 
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -51,8 +51,10 @@ a:visited {
   text-decoration: none;
 }
 a:hover {
-  color: ffff00;
+  background-color: #606060;
+  font-weight: bold;
   text-decoration: none;
+  color: ffffff;
 }
 a:active {
   color: ffff00;
@@ -70,6 +72,16 @@ td .content {
   text-align: center;
   font-family:"Courier New", Courier, monospace;
 }
+td:hover {
+  background-color: #606060;
+  font-weight: bold;
+  color: ffffff;
+}
+td a {
+  display: inline-block;
+  height:100%;
+  width:100%;
+}
 .tooltip {
   position: relative;
   display: inline-block;
@@ -77,9 +89,10 @@ td .content {
 .tooltip .tooltiptext {
   font-family: Arial, Helvetica, sans-serif;
   white-space: normal;
+  font-weight: normal;
   visibility: hidden;
   width: 1000%;
-  height: 1000%;
+  height: 400%;
   background-color: #555;
   color: #fff;
   text-align: left;
@@ -125,7 +138,6 @@ def int2hex(x):
     
 def calcoutputcellcolor(mymodcount,mymodlist):
     satincrease = 1.5
-    stophere = False
     returnvalue = "606060"
     basevalue = 20
     override = False
@@ -163,7 +175,6 @@ modcelltable = []
 mastermoddict = {}
 masterintdict = {}
 filecounter = 1
-fatalerror = False
 tablexmin = 0
 tablexmax = 0
 tableymin = 0
@@ -191,10 +202,10 @@ if not os.path.isfile("tes3conv.exe"):
     print("FATAL: cannot find path to tes3conv.exe, is it in the same folder as this script?")
     sys.exit()
     
-# # TODO rewrite this to be case insensitive
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
-
+tes3convversion = 0
+interiorcell = False
 for files in esplist:
     if files not in excludelist:
         jsonfilename = files[:-4]+".json"
@@ -221,7 +232,22 @@ for files in esplist:
             print("examining file",filecounter,"of",len(esplist),":",files)
             for keys in modfile_parsed_json:
                 if keys["type"] == "Cell" and len(keys["references"])>0:
-                    if "INTERIOR" not in keys["data"]["flags"]:
+                    tes3convversioncheck = 0
+                    tes3convversioncheck = str(keys["data"]["flags"])
+                    #print(tes3convversioncheck)
+                    if tes3convversioncheck.isdigit():
+                        tes3convversion = 0
+                        if int(tes3convversioncheck) == 5 or int(tes3convversioncheck) == 3 or int(tes3convversioncheck) ==  1 or int(tes3convversioncheck) == 7 or int(tes3convversioncheck) == 135:
+                            interiorcell = True
+                        else:
+                            interiorcell = False
+                    else:
+                        tes3convversion = 1
+                        if "INTERIOR" in tes3convversioncheck:
+                            interiorcell = True
+                        else:
+                            interiorcell = False
+                    if not interiorcell:
                         if keys["data"]["grid"][0] < tablexmin:
                             tablexmin = keys["data"]["grid"][0]
                         if keys["data"]["grid"][0] > tablexmax:
@@ -242,15 +268,33 @@ for files in esplist:
                             modcelllist = modcelllist + ", " + files
                             mastermoddict[str(keys["data"]["grid"])] = modcelllist
                     else:
-                        intcellname = str(keys["name"])
-                        if intcellname not in masterintdict:
-                            masterintdict[intcellname] = str(files)
-                            if moreinfo:
-                                print("new int cell",intcellname)
+                        if tes3convversion == 0:
+                            if keys["id"]:
+                                intcellname = str(keys["id"])
+                            else:
+                                intcellname = "nope"
+                             
+                            if intcellname not in masterintdict:
+                                masterintdict[intcellname] = str(files)
+                                if moreinfo:
+                                    print("new int cell",intcellname)
+                            else:
+                                intcelllist = masterintdict[intcellname]
+                                intcelllist = intcelllist + ", " + files
+                                masterintdict[intcellname] = intcelllist
                         else:
-                            intcelllist = masterintdict[intcellname]
-                            intcelllist = intcelllist + ", " + files
-                            masterintdict[intcellname] = intcelllist
+                            if keys["name"]:
+                                intcellname = str(keys["name"])
+
+                            if intcellname not in masterintdict:
+                                masterintdict[intcellname] = str(files)
+                                if moreinfo:
+                                    print("new int cell",intcellname)
+                            else:
+                                intcelllist = masterintdict[intcellname]
+                                intcelllist = intcelllist + ", " + files
+                                masterintdict[intcellname] = intcelllist
+                            
         filecounter+=1
     else:
         print("skipping file",filecounter,"of",len(esplist),":",files,"(excludelist)")

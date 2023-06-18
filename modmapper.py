@@ -35,6 +35,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 from random import randrange
+from datetime import datetime
 
 html_header = """
 <HTML>
@@ -44,6 +45,31 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
 }
+
+a.linkstuff {
+  color: blue; !important;
+  font-weight: bold;
+  text-decoration: normal;
+}
+
+a.linkstuff:visited {
+  color: blue; !important;
+  font-weight: bold;
+  text-decoration: normal;
+}
+
+a.linkstuff:hover {
+  color: blue; !important;
+  font-weight: bold;
+  text-decoration: normal;
+}
+
+a.linkstuff:active {
+  color: blue; !important;
+  font-weight: bold;
+  text-decoration: normal;
+}
+
 a:link {
   color: ffff00;
   text-decoration: none;
@@ -143,6 +169,7 @@ intcelllist = ""
 maxmodcellist = 0
 tes3convversion = 0
 interiorcell = False
+generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
 def int2hex(x):
     val = hex(x)[2:]
@@ -378,7 +405,11 @@ for items in masterintdict:
     formattedintlist = formattedintlist + str("""<P>Interior Cell: <b>"""+str(items)+"""</b><BR>Mods:"""+str(masterintdict[items])+"""</P>\n""")
 
 print("exporting HTML")
-html_body = """<p><b>MODMAPPER """+str(version)+"""</b><br>Examined """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""</p>"""
+html_body = """<p><b>MODMAPPER """+str(version)+"""</b><br>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""<br>"""
+html_body = html_body + """<p> Scroll around map with mouse or keyboard. Hover over cells containing yellow yext to see mods affecting cell, click to go to exterior cell list (user browser back function to return to map position).<br>"""
+html_body = html_body + """Blue cells with black text = no game file or mod touches this cell (textureless ocean). Each mod has a random color assigned.<br>"""
+html_body = html_body + """Use browser search to find exterior cells, specific mod names, interior cells (example: search for \"guild of\". Zoom out with brower. It's not very responsive or mobile device aware (yet?).</p>"""
+html_body = html_body + """<p>This is a primitive alpha but it seems to run well enough. Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>,code <a href = "https://github.com/acidzebra/modmapper" class="linkstuff">here</a>,nexus page <a href="https://www.nexusmods.com/morrowind/mods/53069" class="linkstuff"">here</a>.</p>"""
 html_body = html_body+"".join(table)
 html_body = html_body+formattedextlist
 html_body = html_body+formattedintlist

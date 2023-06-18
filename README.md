@@ -1,4 +1,8 @@
 # modmapper
+
+DEMO: https://acidzebra.github.io/modmapper/
+Nexus: https://www.nexusmods.com/morrowind/mods/53069
+
 Python 3.7+ script for Morrowind to generate a heatmap of exterior cells showing which/how many mods affect each cell. Includes a list of interior cells and what mods alter them. Does not alter game files, generates a single html file with the map + lists you can open in any browser. 
 
 A toy I wrote for myself while working on Lawnmower, it might be of some use if you're trying to find mod conflict areas.

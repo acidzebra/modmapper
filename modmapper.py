@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.3"
+version = "0.5"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -12,21 +12,20 @@ version = "0.3"
 # 0.1 - initial release
 # 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
 # 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
-# 0.3.1 - now that the panic has subsided, cleaned up the version check a little. Should probably implement a function sometime.
-
+# 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit
+# 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
+#
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
 # User-configurable variables, defaults should be fine
-
 # produces a LOT of noise if turned on (pipe output to a file)
 moreinfo = False
 # normally modmapper cleans up after itself, set to False to disable (for repeated runs for instance)
-deletemodjson = True
+deletemodjson = False
 # some padding around the map
 tableborder = 5
 # skip these mods if found. You can add any mods you don't want on the map here.
 excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp"]
-
 # ---
 
 import json
@@ -35,6 +34,7 @@ import sys
 import os
 from os import listdir
 from os.path import isfile, join
+from random import randrange
 
 html_header = """
 <HTML>
@@ -42,6 +42,7 @@ html_header = """
 <STYLE>
 body {
   font-family: Arial, Helvetica, sans-serif;
+  font-size: 100%;
 }
 a:link {
   color: ffff00;
@@ -52,10 +53,10 @@ a:visited {
   text-decoration: none;
 }
 a:hover {
-  background-color: #606060;
+  background-color: #ffffff;
   font-weight: bold;
   text-decoration: none;
-  color: ffffff;
+  color: 000000;
 }
 a:active {
   color: ffff00;
@@ -72,11 +73,12 @@ td .content {
   aspect-ratio: 1 / 1 ;
   text-align: center;
   font-family:"Courier New", Courier, monospace;
+  font-size: 70%;
 }
 td:hover {
-  background-color: #606060;
+  background-color: #ffffff;
   font-weight: bold;
-  color: ffffff;
+  color: 000000;
 }
 td a {
   display: inline-block;
@@ -107,17 +109,6 @@ td a {
   opacity: 0;
   transition: opacity 0.3s;
 }
-.tooltip .tooltiptext::after {
-  white-space: normal;
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #555 transparent transparent transparent;
-}
 .tooltip:hover .tooltiptext {
   white-space: normal;
   visibility: visible;
@@ -132,49 +123,13 @@ html_footer = """
 </BODY>
 </HTML>
 """
-def int2hex(x):
-    val = hex(x)[2:]
-    val = "0"+val if len(val)<2 else val
-    return val
-    
-def calcoutputcellcolor(mymodcount,mymodlist):
-    satincrease = 1.5
-    returnvalue = "606060"
-    basevalue = 20
-    override = False
-    satincrease = int(8*(satincrease*mymodcount)+10)
-    if satincrease > 255:
-        satincrease = 255
-    if satincrease < basevalue:
-        satincrease = basevalue
-    finalcolorincrease = str(int2hex(satincrease))
-# TODO: this is a mess, rewrite
-    for items in mymodlist:
-        if "Morrowind.esm" in items or "Bloodmoon.esm" in items:
-            returnvalue = "00"+str(finalcolorincrease)+"00"
-            override = True
-        elif "TR_" in items and not override:
-            returnvalue = str(finalcolorincrease)+"0000"
-        elif "Sky_" in items and not override:
-            returnvalue = "0020"+str(finalcolorincrease)
-        elif "Cyr_" in items and not override:
-            returnvalue = str(finalcolorincrease)+str(finalcolorincrease)+"00"
-        elif "Wyrmhaven" in items and not override:
-            returnvalue = str(finalcolorincrease)+"00"+str(finalcolorincrease)
-        elif "MD_Azurian" in items and not override:
-            returnvalue = str(finalcolorincrease)+str(finalcolorincrease)+str(finalcolorincrease)
-        if override:
-            break
-    if override:
-        returnvalue = "00"+str(finalcolorincrease)+"00"
-        override = False
-    return returnvalue
 
 modlist = []
 esplist = []
 modcelltable = []
 mastermoddict = {}
 masterintdict = {}
+basecolorhex = {}
 filecounter = 1
 tablexmin = 0
 tablexmax = 0
@@ -185,6 +140,46 @@ failcounter = 0
 failedmodlist = ""
 modcelllist = ""
 intcelllist = ""
+maxmodcellist = 0
+tes3convversion = 0
+interiorcell = False
+
+def int2hex(x):
+    val = hex(x)[2:]
+    val = "0"+val if len(val)<2 else val
+    return val
+
+def calcoutputcellcolor(mymodcount,mymodlist):
+    basegameoverride = False
+    foundmod = False
+    returnvalue = "606060"
+    basevalue = 10
+    currentmod = ""
+    valuestep = (245/maxmodcellist)
+    if mymodcount <= 3:
+        valuestep += 15
+    finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
+    for items in mymodlist:
+        currentmod = items
+        if ("Morrowind.esm" in mymodlist) or ("Bloodmoon.esm" in mymodlist):
+            basegameoverride = True
+        if not basegameoverride and not foundmod and currentmod in basecolorhex:
+            found = True
+            hexcolors = (basecolorhex[currentmod])
+            colorg= hexcolors[:-2]
+            finalcolorr = int((int(hexcolors[:2],16))+finalcolorincrease)
+            finalcolorb = int((int(hexcolors[4:],16))+finalcolorincrease)
+            finalcolorg = int(int(colorg[2:],16)+finalcolorincrease)
+            finaloutr=int2hex(min(finalcolorr, 255))
+            finaloutg=int2hex(min(finalcolorg, 255))
+            finaloutb=int2hex(min(finalcolorb, 255))
+            returnvalue = str(finaloutr)+str(finaloutg)+str(finaloutb)
+        if basegameoverride or foundmod:
+            break
+    if basegameoverride:
+        finalcolorincrease=int2hex(finalcolorincrease)
+        returnvalue = "00"+str(finalcolorincrease)+"00"
+    return returnvalue
 
 try:
     target_folder = sys.argv[1]
@@ -205,9 +200,18 @@ if not os.path.isfile("tes3conv.exe"):
     
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
-tes3convversion = 0
-interiorcell = False
+if "Bloodmoon.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Bloodmoon.esm")))
+if "Morrowind.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
+
 for files in esplist:
+    colr = int2hex(randrange(10, 200))
+    colg = int2hex(randrange(10, 200))
+    colb = int2hex(randrange(10, 200))
+    if files not in basecolorhex:
+        basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
+    tes3convversion = 0
     if files not in excludelist:
         jsonfilename = files[:-4]+".json"
         if deletemodjson and os.path.isfile(str(jsonfilename)):
@@ -235,10 +239,10 @@ for files in esplist:
                 if keys["type"] == "Cell" and len(keys["references"])>0:
                     tes3convversioncheck = 0
                     tes3convversioncheck = str(keys["data"]["flags"])
-                    #print(tes3convversioncheck)
                     if tes3convversioncheck.isdigit():
                         tes3convversion = 0
-                        if int(tes3convversioncheck) == 5 or int(tes3convversioncheck) == 3 or int(tes3convversioncheck) ==  1 or int(tes3convversioncheck) == 7 or int(tes3convversioncheck) == 135:
+                        intlist = [1,5,3,7,135,131,137]
+                        if int(tes3convversioncheck) in intlist:
                             interiorcell = True
                         else:
                             interiorcell = False
@@ -267,6 +271,9 @@ for files in esplist:
                         else:
                             modcelllist = mastermoddict[str(keys["data"]["grid"])]
                             modcelllist = modcelllist + ", " + files
+                            modcelllistcounter = int(len(str(modcelllist).split(",")))
+                            if modcelllistcounter > maxmodcellist:
+                                maxmodcellist = modcelllistcounter
                             mastermoddict[str(keys["data"]["grid"])] = modcelllist
                     else:
                         intcellname = ""
@@ -282,21 +289,12 @@ for files in esplist:
                             intcelllist = masterintdict[intcellname]
                             intcelllist = intcelllist + ", " + files
                             masterintdict[intcellname] = intcelllist
-                  
-                            
+                    interiorcell = False
         filecounter+=1
     else:
         print("skipping file",filecounter,"of",len(esplist),":",files,"(excludelist)")
         filecounter+=1
         excludecounter+=1
-
-mastermoddict = dict(sorted(mastermoddict.items()))  
-dedupe_modcelltable = list()
-for item in modcelltable:
-    if item not in dedupe_modcelltable:
-        dedupe_modcelltable.append(item)
-modcelltable = []
-modcelltable = dedupe_modcelltable
 
 print("Sorting through mods and assembling tables, this will take a while...")
 
@@ -380,7 +378,7 @@ for items in masterintdict:
     formattedintlist = formattedintlist + str("""<P>Interior Cell: <b>"""+str(items)+"""</b><BR>Mods:"""+str(masterintdict[items])+"""</P>\n""")
 
 print("exporting HTML")
-html_body = """<p><b>MODMAPPER 0.1</b><br>Examined """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""</p>"""
+html_body = """<p><b>MODMAPPER """+str(version)+"""</b><br>Examined """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""</p>"""
 html_body = html_body+"".join(table)
 html_body = html_body+formattedextlist
 html_body = html_body+formattedintlist

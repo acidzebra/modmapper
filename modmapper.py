@@ -103,7 +103,7 @@ a:visited {
   text-decoration: none;
 }
 a:hover {
-  background-color: #ffffff;
+  background-color: #909090;
   font-weight: bold;
   text-decoration: none;
   color: ff0000;
@@ -127,9 +127,9 @@ td .content {
   font-size: 70%;
 }
 td:hover {
-  background-color: #ffffff;
+  background-color: #909090;
   font-weight: bold;
-  color: 000000;
+  color: ff0000;
 }
 td a {
   display: inline-block;
@@ -177,7 +177,6 @@ html_footer = """
 </HTML>
 """
 
-modlist = []
 esplist = []
 modcelltable = []
 mastermoddict = {}
@@ -197,7 +196,6 @@ maxmodcellist = 0
 tes3convversion = 0
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-
 global textcolors
 textcolors = "000000"
 
@@ -227,12 +225,12 @@ def calcoutputcellcolor(mymodcount,mymodlist):
             finaloutb=int2hex(min((int((int(hexcolors[4:],16))+finalcolorincrease)), 255))
             finaloutg=int2hex(min((int(int(colorg[2:],16)+finalcolorincrease)), 255))
             lumi = min((0.2126*int(finaloutr,16) + 0.7152*int(finaloutg,16) + 0.0722*int(finaloutb,16)),255)
-            if lumi <= 120:
+            if lumi <= 100:
                 lumi = (lumi-(lumi*0.75))
                 if lumi < 0:
                     lumi = 0
-            if lumi > 120:
-                lumi = (lumi+(lumi*0.75))
+            if lumi > 100:
+                lumi = min((lumi+(lumi*0.75)),255)
             greygradient = int2hex(min(abs(int(255-lumi)),255))
             textcolors = str(greygradient)+str(greygradient)+str(greygradient)
             returnvalue = str(finaloutr)+str(finaloutg)+str(finaloutb)

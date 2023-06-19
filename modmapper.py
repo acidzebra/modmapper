@@ -24,6 +24,8 @@ moreinfo = False
 deletemodjson = False
 # some padding around the map
 tableborder = 2
+# whether other landmass mods should be drawn on top of TR or not, false = yes they should, true = TR should be on top
+trtofront = False
 # skip these mods if found. You can add any mods you don't want on the map here.
 excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
 # ---
@@ -232,19 +234,21 @@ if not os.path.isfile("tes3conv.exe"):
     
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
-
-if "TR_Update.ESP" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("TR_Update.ESP")))
-if "TR_Restexteriors.ESP" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("TR_Restexteriors.ESP")))
-if "TR_Mainland.esm" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
+esplist.sort()
+if trtofront:
+    if "TR_Update.ESP" in esplist:
+        esplist.insert(0, esplist.pop(esplist.index("TR_Update.ESP")))
+    if "TR_Restexteriors.ESP" in esplist:
+        esplist.insert(0, esplist.pop(esplist.index("TR_Restexteriors.ESP")))
+    if "TR_Mainland.esm" in esplist:
+        esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Bloodmoon.esm")))
 if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
+
 
 for files in esplist:
     colr = int2hex(randrange(10, 200))

@@ -14,6 +14,7 @@ version = "0.5"
 # 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
 # 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit
 # 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
+# 0.6 - more map stuff, some new user switches for map color control, brough back color overrides now that randomness seems to work
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -24,15 +25,30 @@ moreinfo = False
 deletemodjson = False
 # some padding around the map
 tableborder = 2
-# whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), default... I'm not sure, both are interesting, one is prettier.
+# whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), defaults to true because the alternative is a clown car of a map
 overridetr = True
-# whether to override random color for Morrowind/Bloodmoon, default = True (shades of green)
-overridemwbm = False
-
 # skip these mods if found. You can add any mods you don't want on the map here.
 excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
-# ---
-
+#  Map color control settings, not really fiddled with this beyond making them available
+# controls coloring for cells, min value 0 max value should be less than maxbrightness, default 10
+minbrightness = 10
+# sensible values between ~100 and 200, min 11, max 255. No checks or guard rails. Lower values produce more muted colors, default 200
+maxbrightness = 200
+# improve contrast for cells with few mods affecting them (only for mods, not base game)
+lowmodcountcontrastincrease = True
+# water/untouched cell color in web/hex RGB
+watercolor = "2B65EC"
+watertextcolor = "1010ff"
+# color overrides, can add your own here or change colors, color format is web/hex RGB
+coloroverride = {}
+coloroverride.update({"Morrowind.esm":"003000"})
+coloroverride.update({"TR_Mainland.esm":"000030"})
+coloroverride.update({"TR_Restexteriors.ESP":"300000"})
+coloroverride.update({"Bloodmoon.esm":"003030"})
+coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
+coloroverride.update({"Cyr_Main.esm":"303000"})
+# ---  
+        
 import json
 import io
 import sys
@@ -79,23 +95,24 @@ a.linkstuff:active {
 }
 
 a:link {
-  color: ffff00;
+  color: 000000;
   text-decoration: none;
 }
 a:visited {
-  color: ffff00;
+  color: 000000;
   text-decoration: none;
 }
 a:hover {
   background-color: #ffffff;
   font-weight: bold;
   text-decoration: none;
-  color: 000000;
+  color: ff0000;
 }
 a:active {
-  color: ffff00;
+  color: 000000;
   text-decoration: none;
 } 
+
 table {
   width: 100%;
   border: none;
@@ -181,41 +198,46 @@ tes3convversion = 0
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
+global textcolors
+textcolors = "000000"
+
 def int2hex(x):
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
     return val
 
 def calcoutputcellcolor(mymodcount,mymodlist):
-    basegameoverride = False
+    global textcolors
     foundmod = False
     returnvalue = "606060"
     basevalue = 10
     currentmod = ""
     valuestep = (245/maxmodcellist)
-    if mymodcount <= 5 and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist:
-        valuestep += 15
+    if mymodcount <= 5 and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and lowmodcountcontrastincrease:
+        valuestep += 10
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
         currentmod = items
-        if (("Morrowind.esm" in mymodlist) or ("Bloodmoon.esm" in mymodlist)) and overridemwbm:
-            basegameoverride = True
-        if not basegameoverride and not foundmod and currentmod in basecolorhex:
+        if not foundmod and currentmod in basecolorhex:
             found = True
+            # the following code is a crime in at least six nations
             hexcolors = (basecolorhex[currentmod])
             colorg= hexcolors[:-2]
-            finalcolorr = int((int(hexcolors[:2],16))+finalcolorincrease)
-            finalcolorb = int((int(hexcolors[4:],16))+finalcolorincrease)
-            finalcolorg = int(int(colorg[2:],16)+finalcolorincrease)
-            finaloutr=int2hex(min(finalcolorr, 255))
-            finaloutg=int2hex(min(finalcolorg, 255))
-            finaloutb=int2hex(min(finalcolorb, 255))
+            finaloutr=int2hex(min((int((int(hexcolors[:2],16))+finalcolorincrease)), 255))
+            finaloutb=int2hex(min((int((int(hexcolors[4:],16))+finalcolorincrease)), 255))
+            finaloutg=int2hex(min((int(int(colorg[2:],16)+finalcolorincrease)), 255))
+            lumi = min((0.2126*int(finaloutr,16) + 0.7152*int(finaloutg,16) + 0.0722*int(finaloutb,16)),255)
+            if lumi <= 120:
+                lumi = (lumi-(lumi*0.75))
+                if lumi < 0:
+                    lumi = 0
+            if lumi > 120:
+                lumi = (lumi+(lumi*0.75))
+            greygradient = int2hex(min(abs(int(255-lumi)),255))
+            textcolors = str(greygradient)+str(greygradient)+str(greygradient)
             returnvalue = str(finaloutr)+str(finaloutg)+str(finaloutb)
-        if basegameoverride or foundmod:
+        if foundmod:
             break
-    if basegameoverride:
-        finalcolorincrease=int2hex(finalcolorincrease)
-        returnvalue = "00"+str(finalcolorincrease)+"00"
     return returnvalue
 
 try:
@@ -245,6 +267,8 @@ if overridetr:
         esplist.insert(0, esplist.pop(esplist.index("TR_Restexteriors.ESP")))
     if "TR_Mainland.esm" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
+if "Solstheim Tomb of The Snow Prince.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))        
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
@@ -252,11 +276,16 @@ if "Bloodmoon.esm" in esplist:
 if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
 
-
 for files in esplist:
-    colr = int2hex(randrange(10, 200))
-    colg = int2hex(randrange(10, 200))
-    colb = int2hex(randrange(10, 200))
+    colr = int2hex(randrange(minbrightness, maxbrightness))
+    colg = int2hex(randrange(minbrightness, maxbrightness))
+    colb = int2hex(randrange(minbrightness, maxbrightness))
+    if files in coloroverride:
+        hexcolors = (coloroverride[files])
+        colr = hexcolors[:2]
+        colg = hexcolors[:-2]
+        colg = colg[2:]
+        colb = hexcolors[4:]
     if files not in basecolorhex:
         basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
     tes3convversion = 0
@@ -409,9 +438,9 @@ while tablerows < tablelength:
             paddingright = paddingright + " "
         if found:
             docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
-            td.append("""<td bgcolor=#"""+str(docellcolor)+""" opacity=1><div class="content"><div class="tooltip"><a href=\"#"""+str(values)+"""\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
+            td.append("""<td bgcolor=#"""+str(docellcolor)+""" opacity=1 style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"#"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
         else:
-            td.append("""<td bgcolor=#2B65EC opacity=1 style=\"color:#000000;\"><div class="content">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</div></td>\n""")
+            td.append("""<td bgcolor=#"""+watercolor+""" opacity=1 style=\"color:#"""+watertextcolor+""";\"><div class="content">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</div></td>\n""")
         found = False
         tablecolumns+=1
     table.append("\t\t"+"".join(td))
@@ -427,10 +456,10 @@ for items in masterintdict:
 
 print("exporting HTML")
 html_body = """<p><b>MODMAPPER """+str(version)+"""</b><br>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""<br>"""
-html_body = html_body + """<p> Scroll around map with mouse or keyboard. Hover over cells containing yellow yext to see mods affecting cell. Click linked to go to details on exterior cell list (use browser back function to return to map position).<BR>"""
+html_body = html_body + """<p> Scroll around map with mouse or keyboard. Hover over cells to see mods affecting cell. Click cell to go to details on exterior cell list (use browser back function to return to map position).<BR>"""
 html_body = html_body + """You will probably want to scroll a good bit to the right and down, there's a lot of sea out there.<BR>"""
-html_body = html_body + """Use browser search to find interior cells or specific mods (example: search for \"guild of\"). Zoom out with brower. It's not very responsive or mobile device aware (yet?).<BR>"""
-html_body = html_body + """Blue cells with black text means no game file or mod touches this cell (textureless ocean). Each mod has a random color assigned which will change every time modmapper runs.</p>"""
+html_body = html_body + """Use browser search to find interior cells or specific mods (example: search for \"guild of\" or \"Akamora\"). Zoom page out with brower zoom function. It's not very responsive or mobile device aware (yet?).<BR>"""
+html_body = html_body + """Blue cells with blue text means no game file or mod touches this cell (textureless ocean). Each mod has a random color assigned which will change every time modmapper runs.</p>"""
 html_body = html_body + """<p>This is a primitive alpha but it seems to run well enough. Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>,code <a href = "https://github.com/acidzebra/modmapper" class="linkstuff">here</a>,nexus page <a href="https://www.nexusmods.com/morrowind/mods/53069" class="linkstuff"">here</a>.</p>"""
 html_body = html_body+"".join(table)
 html_body = html_body+formattedextlist

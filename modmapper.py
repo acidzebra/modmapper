@@ -24,8 +24,11 @@ moreinfo = False
 deletemodjson = False
 # some padding around the map
 tableborder = 2
-# whether other landmass mods should be drawn on top of TR or not, false = yes they should, true = TR should be on top
-trtofront = False
+# whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), default... I'm not sure, both are interesting, one is prettier.
+overridetr = True
+# whether to override random color for Morrowind/Bloodmoon, default = True (shades of green)
+overridemwbm = False
+
 # skip these mods if found. You can add any mods you don't want on the map here.
 excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
 # ---
@@ -195,7 +198,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
         currentmod = items
-        if ("Morrowind.esm" in mymodlist) or ("Bloodmoon.esm" in mymodlist):
+        if (("Morrowind.esm" in mymodlist) or ("Bloodmoon.esm" in mymodlist)) and overridemwbm:
             basegameoverride = True
         if not basegameoverride and not foundmod and currentmod in basecolorhex:
             found = True
@@ -234,8 +237,8 @@ if not os.path.isfile("tes3conv.exe"):
     
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
-esplist.sort()
-if trtofront:
+esplist = sorted(esplist, key=str.casefold)
+if overridetr:
     if "TR_Update.ESP" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Update.ESP")))
     if "TR_Restexteriors.ESP" in esplist:

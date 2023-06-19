@@ -23,9 +23,9 @@ moreinfo = False
 # normally modmapper cleans up after itself, set to False to disable (for repeated runs for instance)
 deletemodjson = False
 # some padding around the map
-tableborder = 5
+tableborder = 2
 # skip these mods if found. You can add any mods you don't want on the map here.
-excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp"]
+excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
 # ---
 
 import json
@@ -40,6 +40,9 @@ from datetime import datetime
 html_header = """
 <HTML>
 <HEADER>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <STYLE>
 body {
   font-family: Arial, Helvetica, sans-serif;
@@ -114,14 +117,15 @@ td a {
 .tooltip {
   position: relative;
   display: inline-block;
+  font-size: 100%;
 }
 .tooltip .tooltiptext {
   font-family: Arial, Helvetica, sans-serif;
+  font-size: 100%;
   white-space: normal;
   font-weight: normal;
   visibility: hidden;
   width: 1000%;
-  height: 400%;
   background-color: #555;
   color: #fff;
   text-align: left;
@@ -138,6 +142,7 @@ td a {
 .tooltip:hover .tooltiptext {
   white-space: normal;
   visibility: visible;
+  font-size: 100%;
   opacity: 1;
 }
 </STYLE>
@@ -183,7 +188,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     basevalue = 10
     currentmod = ""
     valuestep = (245/maxmodcellist)
-    if mymodcount <= 3:
+    if mymodcount <= 5 and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist:
         valuestep += 15
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
@@ -227,6 +232,15 @@ if not os.path.isfile("tes3conv.exe"):
     
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
+
+if "TR_Update.ESP" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("TR_Update.ESP")))
+if "TR_Restexteriors.ESP" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("TR_Restexteriors.ESP")))
+if "TR_Mainland.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
+if "Tribunal.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Bloodmoon.esm")))
 if "Morrowind.esm" in esplist:
@@ -406,9 +420,10 @@ for items in masterintdict:
 
 print("exporting HTML")
 html_body = """<p><b>MODMAPPER """+str(version)+"""</b><br>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""<br>"""
-html_body = html_body + """<p> Scroll around map with mouse or keyboard. Hover over cells containing yellow yext to see mods affecting cell, click to go to exterior cell list (user browser back function to return to map position).<br>"""
-html_body = html_body + """Blue cells with black text = no game file or mod touches this cell (textureless ocean). Each mod has a random color assigned.<br>"""
-html_body = html_body + """Use browser search to find exterior cells, specific mod names, interior cells (example: search for \"guild of\". Zoom out with brower. It's not very responsive or mobile device aware (yet?).</p>"""
+html_body = html_body + """<p> Scroll around map with mouse or keyboard. Hover over cells containing yellow yext to see mods affecting cell. Click linked to go to details on exterior cell list (use browser back function to return to map position).<BR>"""
+html_body = html_body + """You will probably want to scroll a good bit to the right and down, there's a lot of sea out there.<BR>"""
+html_body = html_body + """Use browser search to find interior cells or specific mods (example: search for \"guild of\"). Zoom out with brower. It's not very responsive or mobile device aware (yet?).<BR>"""
+html_body = html_body + """Blue cells with black text means no game file or mod touches this cell (textureless ocean). Each mod has a random color assigned which will change every time modmapper runs.</p>"""
 html_body = html_body + """<p>This is a primitive alpha but it seems to run well enough. Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>,code <a href = "https://github.com/acidzebra/modmapper" class="linkstuff">here</a>,nexus page <a href="https://www.nexusmods.com/morrowind/mods/53069" class="linkstuff"">here</a>.</p>"""
 html_body = html_body+"".join(table)
 html_body = html_body+formattedextlist

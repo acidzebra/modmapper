@@ -29,7 +29,7 @@ HOW TO USE
 - open a command prompt python modmapper.py "path_to_the_folder_you_put_everything_in
 - wait 1-2 minutes while modmapper examines all mods, and open the resulting modmapper.html file in a browser.
 
-The wait time is dependent on how many mods it has to inspect, I have ~350 mods and it takes a minute or so.
+The wait time is dependent on how many mods it has to inspect, I have ~350 mods and it takes a minute or so. If you want to rerun multiple times, consider setting deletemodjson = False (open modmapper.py with a text editor)
 
 INTERPRETING THE MAP
 After opening modmapper.html you will see some program info and the start of the map.

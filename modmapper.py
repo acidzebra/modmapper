@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.7b1"
+version = "0.7b2ish"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -49,6 +49,8 @@ txcolor = "808080"
 # water/untouched cell color in web/hex RGB
 watercolor = "2B65EC"
 watertextcolor = "1010ff"
+# add empty cells to the exterior cell list. This will make that list VERY long and the program VERY slow.
+addemptycells = False
 # color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
 coloroverride = {}
 coloroverride.update({"Morrowind.esm":"002000"})
@@ -71,6 +73,7 @@ from random import randrange
 from datetime import datetime
 
 html_header = """
+<!DOCTYPE html>
 <HTML>
 <HEAD>
 <title>Morrowind Modmapper v"""+str(version)+"""+</title>
@@ -81,40 +84,40 @@ html_header = """
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
-  background-color: 101010;
-  color: 808080;
+  background-color: #101010;
+  color: #808080;
 }
 
 a.linkstuff {
-  color: a0a0a0; !important;
+  color: #a0a0a0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:visited {
-  color: a0a0a0; !important;
+  color: #a0a0a0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:hover {
-  color: c0c0c0; !important;
+  color: #c0c0c0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:active {
-  color: b0b0b0; !important;
+  color: #b0b0b0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a:link {
-  color: 909090;
+  color: #909090;
   text-decoration: none;
 }
 a:visited {
-  color: 909090;
+  color: #909090;
   text-decoration: none;
 }
 a:hover {
@@ -124,7 +127,7 @@ a:hover {
   color: ff0000;
 }
 a:active {
-  color: 909090;
+  color: #909090;
   text-decoration: none;
 } 
 
@@ -144,7 +147,7 @@ td .content {
 td:hover {
   background-color: #909090;
   font-weight: bold;
-  color: ff0000;
+  color: #ff0000;
 }
 td a {
   display: inline-block;
@@ -190,14 +193,12 @@ td a {
   left: 0;
   right: 0;
   z-index: 500;
-  transition: all 0.3s ease-in-out;
 }
 .flex-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px 0;
-  transition: all 0.3s ease-in-out;
 }
 .nav ul {
   display: flex;
@@ -209,7 +210,6 @@ td a {
   color: #fff;
   text-decoration: none;
   padding: 7px 15px;
-  transition: all 0.3s ease-in-out;
 }
   </STYLE>
 </HEAD>
@@ -263,7 +263,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     for items in mymodlist:
         currentmod = items
         if not foundmod and currentmod in basecolorhex:
-            found = True
+            foundmod = True
             hexcolors = (basecolorhex[currentmod])
             colorg= hexcolors[:-2]
             colorg= int(colorg[2:],16)
@@ -319,6 +319,8 @@ if not os.path.isfile("tes3conv.exe"):
     
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
 esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
+
+# esplist += [filename for filename in listdir(target_folder) if filename.lower().rsplit('.')[2] in ["esp", "esm", "omwaddon"]]
 esplist = sorted(esplist, key=str.casefold)
 if overridetr:
     if "TR_Update.ESP" in esplist:
@@ -445,8 +447,9 @@ tablexmax = tablexmax + tableborder
 tableymin = tableymin - tableborder
 tableymax = tableymax + tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
+midvaluex = tablexmin+abs(tablexmax)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
-
+midvaluey = tableymin+abs(tableymax)
 if moreinfo:
     print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
@@ -461,7 +464,7 @@ tablecolumns = 0
 tooltipdata = ""
 formattedextlist = ""
 while tablerows < tablelength:
-    print("Map row",tablerows,"of",(tablelength-1),"(",(tablewidth-1),"columns/cells per row)")
+    print("Assembling map row",tablerows,"of",(tablelength-1),"(",(tablewidth-1),"columns/cells per row)")
     table.append("""\n\t</tr>\n""")
     td = []
     tablecolumns = 0
@@ -487,6 +490,7 @@ while tablerows < tablelength:
                 formattedextlist = formattedextlist + """<BR><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)
             if found:
                 break
+
 # TODO: this is a truly terrible way to do padding, I should probably manipulate the CSS of the individual table cells instead. BUUUUUT this works for my purposes.
         paddingleft = ""
         paddingright = ""
@@ -495,18 +499,23 @@ while tablerows < tablelength:
         if abs(values[0]) < 10:
             paddingleft = "  "
         if paddingleft and values[0] > -1:
-            paddingleft = paddingleft + " "
+            paddingleft += " "
         if abs(values[1]) < 100:
             paddingright = "  "
         if abs(values[1]) < 10:
             paddingright = "   "
         if paddingright and values[1] > -1:
-            paddingright = paddingright + " "
+            paddingright += " "
+        cellx = str(int(tablecolumns-abs(tablexmin)))
+        celly = str(int(tablerows-abs(tableymin)))
         if found:
             docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
-            td.append("""<td bgcolor=#"""+str(docellcolor)+""" opacity=1 style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
+            td.append("""<td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
         else:
-            td.append("""<td bgcolor=#"""+watercolor+""" opacity=1 style=\"color:#"""+watertextcolor+""";\"><div class="content">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</div></td>\n""")
+            
+            td.append("""<td bgcolor=#"""+str(watercolor)+""" style=\"color:#"""+watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
+            if addemptycells:
+                formattedextlist = formattedextlist + """<BR><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL"""
         found = False
         tablecolumns+=1
     table.append("\t\t"+"".join(td))
@@ -515,7 +524,7 @@ while tablerows < tablelength:
 table.append("""<table>\n""")
 table.reverse()
 
-print("generating interior list...")
+print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
 masterintdict = dict(sorted(masterintdict.items())) 
 for items in masterintdict:
@@ -523,26 +532,25 @@ for items in masterintdict:
 
 print("exporting HTML")
 html_body = ""
-
 html_body = html_body + """
 <nav class="nav">
   <div class="flex-container">
-    <h1 class="logo"><a href="index.html#map[34, 21]">Morrowind Modmapper """+str(version)+"""</a></h1>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
+    <h1 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h1>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
 if excludecounter > 0:
     html_body = html_body + """ Skipped """+str(excludecounter)+""" files on the exclude list. """
 if failcounter > 0:
-    html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""."""
+    html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods."""
+
 html_body = html_body + """
     <ul>
-      <li><a href="index.html#map[34, 21]">Map</a></li>
-      <li><a href="modmapper_interiors.html">Interiors</a></li>
-      <li><a href="modmapper_exteriors.html">Exteriors</a></li>
-      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" target="_blank">Nexus</a></li>
-      <li><a href="https://github.com/acidzebra/modmapper" target="_blank">Github</a></li>
+      <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
+      <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
+      <li><a href="modmapper_exteriors.html" title="open page of Exterior cells">Exteriors</a></li>
+      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" title="NexusMods mod page (new tab)" target="_blank">NexusMods</a></li>
+      <li><a href="https://github.com/acidzebra/modmapper" title="Modmapper GitHub page (new tab)" target="_blank">Github</a></li>
     </ul>
   </div>
 </nav>
-</div>
 """
 navbarheader = html_body
 
@@ -552,7 +560,7 @@ if splitpages:
 
     html_int_body = navbarheader
     i = 0
-    while i < 8:
+    while i < 6:
         html_int_body += """<br>"""
         i+=1
     html_int_body += formattedintlist
@@ -560,29 +568,28 @@ if splitpages:
 
     html_ext_body = navbarheader
     i = 0
-    while i < 8:
+    while i < 4:
         html_ext_body += """<br>"""
         i+=1
     html_ext_body += html_ext_body+formattedextlist
     exterior_output = html_header+html_ext_body+html_footer
-
-    Html_file= open("index.html","w")
-    Html_file.write(index_output)
-    Html_file.close()
-    Html_file= open("modmapper_interiors.html","w")
-    Html_file.write(interior_output)
-    Html_file.close()
-    Html_file= open("modmapper_exteriors.html","w")
-    Html_file.write(exterior_output)
-    Html_file.close()
+    html_file= open("index.html","w")
+    html_file.write(index_output)
+    html_file.close()
+    html_file= open("modmapper_interiors.html","w")
+    html_file.write(interior_output)
+    html_file.close()
+    html_file= open("modmapper_exteriors.html","w")
+    html_file.write(exterior_output)
+    html_file.close()
 else:
     html_body += "".join(table)
     html_body += formattedextlist
     html_body += formattedintlist
     index_output = html_header+html_body+html_footer
-    Html_file= open("index.html","w")
-    Html_file.write(index_output)
-    Html_file.close()
+    html_file= open("index.html","w")
+    html_file.write(index_output)
+    html_file.close()
 
 
 

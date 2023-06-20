@@ -37,7 +37,7 @@ filecounter = 1
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
-# Somewhat unfamiliar with the `global keyword but seems unnecessary in a monoscript`
+# Somewhat unfamiliar with the `global` keyword but seems unnecessary in a monoscript
 global textcolors
 textcolors = "000000"
 

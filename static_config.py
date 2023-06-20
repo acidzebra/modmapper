@@ -1,5 +1,8 @@
 # User-configurable variables, defaults should be fine
 
+# add empty cells to the exterior cell list. This will make that list VERY long and the program VERY slow.
+addemptycells = False
+
 # split into multiple web pages- good for very big modlists
 splitpages = True
 

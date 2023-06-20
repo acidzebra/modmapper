@@ -2,9 +2,13 @@
 bgcolor = "101010"
 txcolor = "808080"
 
+from modmapper import version
+
 header = """
+<!DOCTYPE html>
 <HTML>
 <HEAD>
+<title>Morrowind Modmapper v"""+str(version)+"""+</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -12,40 +16,40 @@ header = """
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
-  background-color: """+bgcolor+""";
-  color: """+txcolor+""";
+  background-color: #101010;
+  color: #808080;
 }
 
 a.linkstuff {
-  color: a0a0a0; !important;
+  color: #a0a0a0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:visited {
-  color: a0a0a0; !important;
+  color: #a0a0a0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:hover {
-  color: c0c0c0; !important;
+  color: #c0c0c0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:active {
-  color: b0b0b0; !important;
+  color: #b0b0b0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a:link {
-  color: 909090;
+  color: #909090;
   text-decoration: none;
 }
 a:visited {
-  color: 909090;
+  color: #909090;
   text-decoration: none;
 }
 a:hover {
@@ -55,9 +59,9 @@ a:hover {
   color: ff0000;
 }
 a:active {
-  color: 909090;
+  color: #909090;
   text-decoration: none;
-}
+} 
 
 table {
   width: 100%;
@@ -75,7 +79,7 @@ td .content {
 td:hover {
   background-color: #909090;
   font-weight: bold;
-  color: ff0000;
+  color: #ff0000;
 }
 td a {
   display: inline-block;
@@ -112,13 +116,40 @@ td a {
   visibility: visible;
   font-size: 100%;
   opacity: 1;
+}
+.nav {
+  position: fixed;
+  background-color: #06111c;
+  background: #06111c;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+}
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+}
+.nav ul {
+  display: flex;
+  list-style-type: none;
+  align-items: center;
+  justify-content: center;
+}
+.nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 7px 15px;
+}
   </STYLE>
 </HEAD>
 <BODY>
-
 """
 
 footer = """
+</div>
 </BODY>
 </HTML>
 """

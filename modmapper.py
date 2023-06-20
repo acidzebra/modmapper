@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 # Modmapper for Morrowind
-version = "0.7b1"
+# Modmapper for Morrowind
+version = "0.7b2ish"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -10,7 +11,6 @@ version = "0.7b1"
 # (or just dump modmapper.py and tes3conv.exe in your data folder, that's what I do)
 #
 # run python modmapper.py "path-to-modfolder"
-#
 # 0.1 - initial release
 # 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
 # 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
@@ -34,7 +34,7 @@ basecolorhex = masterintdict = mastermoddict = {}
 intcelllist = modcelllist = failedmodlist = ""
 modcelltable = esplist = []
 
-failcounter = excludecounter = tablexmin = tablexmax = tableymax = tableymin = maxmodcelllist = tes3convversion= 0
+failcounter = excludecounter = tablexmin = tablexmax = tableymax = tableymin = maxmodcelllist = tes3convversion = 0
 filecounter = 1
 
 interiorcell = False
@@ -83,9 +83,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     for items in mymodlist:
         currentmod = items
         if not foundmod and currentmod in basecolorhex:
-            # Unused?
-            # found = True
-
+            foundmod = True
             hexcolors = (basecolorhex[currentmod])
             colorg= hexcolors[:-2]
             colorg= int(colorg[2:],16)
@@ -115,6 +113,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
                     lumi = 0
             if lumi > 100 and lumi <= 150:
                 lumi = min((lumi+(lumi*0.75)),255)
+
             # Dead code? Oh god I just realized the indentation is wrong
             # greygradient = int2hex(min(int(255-lumi),255))
             # textcolors = str(greygradient)+str(greygradient)+str(greygradient)
@@ -131,7 +130,6 @@ except:
     print("run: python modmapper.py \"target directory\"")
     print("output will be saved as index.html")
     sys.exit()
-
 if not path.isdir(target_folder):
     print("FATAL: target directory \"",target_folder,"\"does not exist.")
     sys.exit()
@@ -154,6 +152,8 @@ if conf.overridetr:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))
+if "Siege at Firemoth Fort.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth Fort.esm")))
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
@@ -263,14 +263,14 @@ for files in esplist:
         excludecounter+=1
 
 print("Sorting through mods and assembling tables, this will take a while...")
-
 tablexmin = tablexmin - conf.tableborder
 tablexmax = tablexmax + conf.tableborder
 tableymin = tableymin - conf.tableborder
 tableymax = tableymax + conf.tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
+midvaluex = tablexmin+abs(tablexmax)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
-
+midvaluey = tableymin+abs(tableymax)
 if conf.moreinfo:
     print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"conf.tableborder",conf.tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
@@ -285,6 +285,7 @@ tablecolumns = 0
 tooltipdata = ""
 formattedextlist = ""
 while tablerows < tablelength:
+    print("Assembling map row",tablerows,"of",(tablelength-1),"(",(tablewidth-1),"columns/cells per row)")
     table.append("""\n\t</tr>\n""")
     td = []
     tablecolumns = 0
@@ -310,7 +311,7 @@ while tablerows < tablelength:
                 formattedextlist = formattedextlist + """<BR><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)
             if found:
                 break
-# TODO: this is a truly terrible way to do padding, I should probably manipulate the CSS of the individual table cells instead. BUUUUUT this works for my purposes.
+            # TODO: this is a truly terrible way to do padding, I should probably manipulate the CSS of the individual table cells instead. BUUUUUT this works for my purposes.
         paddingleft = ""
         paddingright = ""
         if abs(values[0]) < 100:
@@ -318,18 +319,24 @@ while tablerows < tablelength:
         if abs(values[0]) < 10:
             paddingleft = "  "
         if paddingleft and values[0] > -1:
-            paddingleft = paddingleft + " "
+            paddingleft += " "
         if abs(values[1]) < 100:
             paddingright = "  "
         if abs(values[1]) < 10:
             paddingright = "   "
         if paddingright and values[1] > -1:
-            paddingright = paddingright + " "
+            paddingright += " "
+        cellx = str(int(tablecolumns-abs(tablexmin)))
+        celly = str(int(tablerows-abs(tableymin)))
         if found:
             docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
-            td.append("""<td conf.bgcolor=#"""+str(docellcolor)+""" opacity=1 style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
+            td.append("""<td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
         else:
-            td.append("""<td conf.bgcolor=#"""+conf.watercolor+""" opacity=1 style=\"color:#"""+conf.watertextcolor+""";\"><div class="content">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</div></td>\n""")
+            td.append("""<td bgcolor=#"""+str(conf.watercolor)+""" style=\"color:#"""+conf.watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
+
+            # This variable *is* defined, but seeingly is complaining due to other factors
+            if addemptycells:
+                formattedextlist = formattedextlist + """<BR><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL"""
         found = False
         tablecolumns+=1
     table.append("\t\t"+"".join(td))
@@ -338,6 +345,7 @@ while tablerows < tablelength:
 table.append("""<table>\n""")
 table.reverse()
 
+print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
 masterintdict = dict(sorted(masterintdict.items())) 
 for items in masterintdict:
@@ -345,43 +353,56 @@ for items in masterintdict:
 
 print("exporting HTML")
 html_body = ""
-html_body = html_body + """<p><b>MODMAPPER """+str(version)+"""</b><br>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
+html_body = html_body + """
+<nav class="nav">
+  <div class="flex-container">
+    <h1 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h1>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
 if excludecounter > 0:
     html_body = html_body + """ Skipped """+str(excludecounter)+""" files on the exclude list. """
 if failcounter > 0:
-    html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""."""
-html_body = html_body + """
-<p> Scroll around map with mouse or keyboard. Hover over cells to see mods affecting cell. Click cell to go to details on exterior cell list (use browser back function to return to map position).<BR>
-Blue cells with blue text means no game file or mod touches this cell (textureless ocean). Each mod other than the base game and TR/PT has a random color assigned which will change every time modmapper runs.<br>
-You will probably want to use the jump link below or scroll a good bit to the right and down, there's a lot of sea out there. Zoom page out with brower zoom function. It's not very responsive or mobile device aware (yet?).</p>
-<p><a href="#map[34, 21]" class="linkstuff">[CLICK TO JUMP TO VVARDENFEL CENTER]</a></p>
-<p>INTERIORS HAVE MOVED TO <a href="modmapper_interiors.html" class="linkstuff">[A SEPARATE PAGE HERE]</a></p>
-Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>,code <a href = "https://github.com/acidzebra/modmapper" class="linkstuff">here</a>,nexus page <a href="https://www.nexusmods.com/morrowind/mods/53069" class="linkstuff"">here</a>.
-"""
+    html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods."""
 
+html_body = html_body + """
+    <ul>
+      <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
+      <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
+      <li><a href="modmapper_exteriors.html" title="open page of Exterior cells">Exteriors</a></li>
+      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" title="NexusMods mod page (new tab)" target="_blank">NexusMods</a></li>
+      <li><a href="https://github.com/acidzebra/modmapper" title="Modmapper GitHub page (new tab)" target="_blank">Github</a></li>
+    </ul>
+  </div>
+</nav>
+"""
+navbarheader = html_body
 
 if conf.splitpages:
     html_body = html_body+"".join(table)
     index_output = html.header+html_body+html.footer
 
-    html_int_body = """<P>Use browser search to find interior cells or specific mods (example: search for \"guild of\" or \"Akamora\").</P>"""
-    html_int_body += """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
+    html_int_body = navbarheader
+    i = 0
+    while i < 6:
+        html_int_body += """<br>"""
+        i+=1
     html_int_body += formattedintlist
     interior_output = html.header+html_int_body+html.footer
 
-    html_ext_body = """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
-    html_ext_body = html_ext_body+formattedextlist
+    html_ext_body = navbarheader
+    i = 0
+    while i < 4:
+        html_ext_body += """<br>"""
+        i+=1
+    html_ext_body += html_ext_body+formattedextlist
     exterior_output = html.header+html_ext_body+html.footer
-
-    Html_file= open("index.html","w")
-    Html_file.write(index_output)
-    Html_file.close()
-    Html_file= open("modmapper_interiors.html","w")
-    Html_file.write(interior_output)
-    Html_file.close()
-    Html_file= open("modmapper_exteriors.html","w")
-    Html_file.write(exterior_output)
-    Html_file.close()
+    html_file= open("index.html","w")
+    html_file.write(index_output)
+    html_file.close()
+    html_file= open("modmapper_interiors.html","w")
+    html_file.write(interior_output)
+    html_file.close()
+    html_file= open("modmapper_exteriors.html","w")
+    html_file.write(exterior_output)
+    html_file.close()
 else:
     html_body += "".join(table)
     html_body += formattedextlist

@@ -45,21 +45,40 @@ global textcolors
 textcolors = "000000"
 
 def int2hex(x):
-    """Converts an integer into hex representation without the leading 0x, e.g.
-    25 returns 19"""
+    """
+    Converts an integer into hex representation without the leading 0x, e.g.
+    25 returns 19
+    """
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
     return val
 
 def calcoutputcellcolor(mymodcount,mymodlist):
-    global textcolors
+    """
+    What the fuck is happening here oh my god
+    """
+    # Redeclaration ?
+    # global textcolors
+
+    # Bool determining if mod was found?
     foundmod = False
+    # Looks like a static color value
     returnvalue = "606060"
+
+    #Based ? Idk
     basevalue = 0
+
+    # Current mod being evaluated ?
     currentmod = ""
+
+    # Profit
     valuestep = conf.stepmodifier*(250/maxmodcellist)
+
+    # On short load orders, conditionally increase the contrast of this cell (the literal cell represented by the cell in the table
+    # [I hate this terminology])
     if mymodcount <= conf.lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and conf.lowmodcountcontrastincrease:
         valuestep += 10
+
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
         currentmod = items
@@ -96,8 +115,9 @@ def calcoutputcellcolor(mymodcount,mymodlist):
                     lumi = 0
             if lumi > 100 and lumi <= 150:
                 lumi = min((lumi+(lumi*0.75)),255)
-            greygradient = int2hex(min(int(255-lumi),255))
-            textcolors = str(greygradient)+str(greygradient)+str(greygradient)
+            # Dead code? Oh god I just realized the indentation is wrong
+            # greygradient = int2hex(min(int(255-lumi),255))
+            # textcolors = str(greygradient)+str(greygradient)+str(greygradient)
             returnvalue = str(int2hex(int(finaloutr)))+str(int2hex(int(finaloutg)))+str(int2hex(int(finaloutb)))
         if foundmod:
             break

@@ -1,3 +1,6 @@
+# background and text color
+bgcolor = "101010"
+txcolor = "808080"
 
 header = """
 <HTML>
@@ -9,8 +12,8 @@ header = """
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
-  background-color: """+conf.bgcolor+""";
-  color: """+conf.txcolor+""";
+  background-color: """+bgcolor+""";
+  color: """+txcolor+""";
 }
 
 a.linkstuff {

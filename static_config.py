@@ -34,10 +34,6 @@ lowmodcount = 10
 # controls the increase of values between steps (somewhat), values between 0-1 make the most sense, not really tested beyond that, default 1
 stepmodifier = 1
 
-# background and text color
-bgcolor = "101010"
-txcolor = "808080"
-
 # water/untouched cell color in web/hex RGB
 watercolor = "2B65EC"
 watertextcolor = "1010ff"

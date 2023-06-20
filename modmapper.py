@@ -58,6 +58,7 @@ coloroverride.update({"Bloodmoon.esm":"003030"})
 coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
 coloroverride.update({"Cyr_Main.esm":"909000"})
 coloroverride.update({"Sky_Main.esm":"001060"})
+
 # ---  
         
 import json
@@ -72,6 +73,7 @@ from datetime import datetime
 html_header = """
 <HTML>
 <HEAD>
+<title>Morrowind Modmapper v"""+str(version)+"""+</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -79,8 +81,8 @@ html_header = """
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
-  background-color: """+bgcolor+""";
-  color: """+txcolor+""";
+  background-color: 101010;
+  color: 808080;
 }
 
 a.linkstuff {
@@ -179,13 +181,43 @@ td a {
   visibility: visible;
   font-size: 100%;
   opacity: 1;
+}
+.nav {
+  position: fixed;
+  background-color: #06111c;
+  background: #06111c;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  transition: all 0.3s ease-in-out;
+}
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  transition: all 0.3s ease-in-out;
+}
+.nav ul {
+  display: flex;
+  list-style-type: none;
+  align-items: center;
+  justify-content: center;
+}
+.nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 7px 15px;
+  transition: all 0.3s ease-in-out;
+}
   </STYLE>
 </HEAD>
 <BODY>
-
 """
 
 html_footer = """
+</div>
 </BODY>
 </HTML>
 """
@@ -296,13 +328,16 @@ if overridetr:
     if "TR_Mainland.esm" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))        
+    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))   
+if "Siege at Firemoth Fort.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth Fort.esm")))    
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Bloodmoon.esm")))
 if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
+
 
 for files in esplist:
     if files not in excludelist:
@@ -426,6 +461,7 @@ tablecolumns = 0
 tooltipdata = ""
 formattedextlist = ""
 while tablerows < tablelength:
+    print("Map row",tablerows,"of",(tablelength-1),"(",(tablewidth-1),"columns/cells per row)")
     table.append("""\n\t</tr>\n""")
     td = []
     tablecolumns = 0
@@ -479,6 +515,7 @@ while tablerows < tablelength:
 table.append("""<table>\n""")
 table.reverse()
 
+print("generating interior list...")
 formattedintlist = ""
 masterintdict = dict(sorted(masterintdict.items())) 
 for items in masterintdict:
@@ -486,32 +523,47 @@ for items in masterintdict:
 
 print("exporting HTML")
 html_body = ""
-html_body = html_body + """<p><b>MODMAPPER """+str(version)+"""</b><br>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
+
+html_body = html_body + """
+<nav class="nav">
+  <div class="flex-container">
+    <h1 class="logo"><a href="index.html#map[34, 21]">Morrowind Modmapper """+str(version)+"""</a></h1>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
 if excludecounter > 0:
     html_body = html_body + """ Skipped """+str(excludecounter)+""" files on the exclude list. """
 if failcounter > 0:
     html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""."""
 html_body = html_body + """
-<p> Scroll around map with mouse or keyboard. Hover over cells to see mods affecting cell. Click cell to go to details on exterior cell list (use browser back function to return to map position).<BR>
-Blue cells with blue text means no game file or mod touches this cell (textureless ocean). Each mod other than the base game and TR/PT has a random color assigned which will change every time modmapper runs.<br>
-You will probably want to use the jump link below or scroll a good bit to the right and down, there's a lot of sea out there. Zoom page out with brower zoom function. It's not very responsive or mobile device aware (yet?).</p>
-<p><a href="#map[34, 21]" class="linkstuff">[CLICK TO JUMP TO VVARDENFEL CENTER]</a></p>
-<p>INTERIORS HAVE MOVED TO <a href="modmapper_interiors.html" class="linkstuff">[A SEPARATE PAGE HERE]</a></p>
-Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>,code <a href = "https://github.com/acidzebra/modmapper" class="linkstuff">here</a>,nexus page <a href="https://www.nexusmods.com/morrowind/mods/53069" class="linkstuff"">here</a>.
+    <ul>
+      <li><a href="index.html#map[34, 21]">Map</a></li>
+      <li><a href="modmapper_interiors.html">Interiors</a></li>
+      <li><a href="modmapper_exteriors.html">Exteriors</a></li>
+      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" target="_blank">Nexus</a></li>
+      <li><a href="https://github.com/acidzebra/modmapper" target="_blank">Github</a></li>
+    </ul>
+  </div>
+</nav>
+</div>
 """
-
+navbarheader = html_body
 
 if splitpages:
     html_body = html_body+"".join(table)
     index_output = html_header+html_body+html_footer
 
-    html_int_body = """<P>Use browser search to find interior cells or specific mods (example: search for \"guild of\" or \"Akamora\").</P>"""
-    html_int_body += """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
+    html_int_body = navbarheader
+    i = 0
+    while i < 8:
+        html_int_body += """<br>"""
+        i+=1
     html_int_body += formattedintlist
     interior_output = html_header+html_int_body+html_footer
 
-    html_ext_body = """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
-    html_ext_body = html_ext_body+formattedextlist
+    html_ext_body = navbarheader
+    i = 0
+    while i < 8:
+        html_ext_body += """<br>"""
+        i+=1
+    html_ext_body += html_ext_body+formattedextlist
     exterior_output = html_header+html_ext_body+html_footer
 
     Html_file= open("index.html","w")

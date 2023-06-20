@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Modmapper for Morrowind
 version = "0.7b1"
 #
@@ -43,6 +44,8 @@ global textcolors
 textcolors = "000000"
 
 def int2hex(x):
+    """Converts an integer into hex representation without the leading 0x, e.g.
+    25 returns 19"""
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
     return val

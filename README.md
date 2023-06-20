@@ -1,6 +1,6 @@
 # modmapper
 
-DEMO: https://acidzebra.github.io/modmapper/ - currently tracks 1100+ mods and the changes they make to exterior and interior cells.
+DEMO: https://acidzebra.github.io/modmapper/ - currently tracks 2000+ mods and the changes they make to exterior and interior cells.
 
 Nexus: https://www.nexusmods.com/morrowind/mods/53069
 

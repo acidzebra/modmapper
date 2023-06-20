@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.7b2ish"
+version = "0.7b3"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -198,7 +198,7 @@ td a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 0;
+  padding: 10px 0;
 }
 .nav ul {
   display: flex;
@@ -331,8 +331,8 @@ if overridetr:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))   
-if "Siege at Firemoth Fort.esm" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth Fort.esm")))    
+if "Siege at Firemoth Fort.esp" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth Fort.esp")))    
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
@@ -447,9 +447,10 @@ tablexmax = tablexmax + tableborder
 tableymin = tableymin - tableborder
 tableymax = tableymax + tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
-midvaluex = tablexmin+abs(tablexmax)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
-midvaluey = tableymin+abs(tableymax)
+midvaluey = int(tableymin+abs(tablewidth/2))
+midvaluex = int(tablexmin+abs(tablelength/2))
+
 if moreinfo:
     print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
@@ -535,7 +536,7 @@ html_body = ""
 html_body = html_body + """
 <nav class="nav">
   <div class="flex-container">
-    <h1 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h1>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
+    <h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
 if excludecounter > 0:
     html_body = html_body + """ Skipped """+str(excludecounter)+""" files on the exclude list. """
 if failcounter > 0:

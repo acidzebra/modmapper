@@ -53,12 +53,12 @@ watercolor = "2B65EC"
 watertextcolor = "1010ff"
 # color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
 coloroverride = {}
-coloroverride.update({"Morrowind.esm":"003000"})
-coloroverride.update({"TR_Mainland.esm":"000030"})
-coloroverride.update({"TR_Restexteriors.ESP":"300000"})
-coloroverride.update({"Bloodmoon.esm":"003030"})
-coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
-coloroverride.update({"Cyr_Main.esm":"303000"})
+coloroverride.update({"Morrowind.esm":"001000"})
+coloroverride.update({"TR_Mainland.esm":"000010"})
+coloroverride.update({"TR_Restexteriors.ESP":"100000"})
+coloroverride.update({"Bloodmoon.esm":"001010"})
+coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"100010"})
+coloroverride.update({"Cyr_Main.esm":"101000"})
 # ---  
         
 import json
@@ -233,7 +233,6 @@ def calcoutputcellcolor(mymodcount,mymodlist):
         currentmod = items
         if not foundmod and currentmod in basecolorhex:
             found = True
-            # the following code is a crime in at least six nations
             hexcolors = (basecolorhex[currentmod])
             colorg= hexcolors[:-2]
             colorg= int(colorg[2:],16)
@@ -241,26 +240,26 @@ def calcoutputcellcolor(mymodcount,mymodlist):
             colorb= int(hexcolors[4:],16)
             if maincolorsatincreaseonly:
                 if colorr > colorg and colorr > colorb:        
-                    finaloutr=int2hex(min((colorr+finalcolorincrease), 255))
-                    finaloutb=int2hex(colorb)
-                    finaloutg=int2hex(colorg)
+                    finaloutr=min((colorr+finalcolorincrease), 255)
+                    finaloutb=colorb
+                    finaloutg=colorg
                 elif colorg > colorr and colorg > colorb:        
-                    finaloutg=int2hex(min((colorg+finalcolorincrease), 255))
-                    finaloutb=int2hex(colorb)
-                    finaloutr=int2hex(colorr)
+                    finaloutg=min((colorg+finalcolorincrease), 255)
+                    finaloutb=colorb
+                    finaloutr=colorr
                 elif colorb > colorg and colorb > colorr:        
-                    finaloutb=int2hex(min((colorb+finalcolorincrease), 255))
-                    finaloutr=int2hex(colorr)
-                    finaloutg=int2hex(colorg)
+                    finaloutb=min((colorb+finalcolorincrease), 255)
+                    finaloutr=colorr
+                    finaloutg=colorg
                 else:
-                    finaloutr=int2hex(min((colorr+finalcolorincrease), 255))
-                    finaloutg=int2hex(min((colorg+finalcolorincrease), 255))
-                    finaloutb=int2hex(min((colorb+finalcolorincrease), 255))
+                    finaloutr=min((colorr+finalcolorincrease), 255)
+                    finaloutg=min((colorg+finalcolorincrease), 255)
+                    finaloutb=min((colorb+finalcolorincrease), 255)
             else:
-                finaloutr=int2hex(min((colorr+finalcolorincrease), 255))
-                finaloutg=int2hex(min((colorg+finalcolorincrease), 255))
-                finaloutb=int2hex(min((colorb+finalcolorincrease), 255))
-            lumi = min((0.2126*int(finaloutr,16) + 0.7152*int(finaloutg,16) + 0.0722*int(finaloutb,16)),255)
+                finaloutr=min((colorr+finalcolorincrease), 255)
+                finaloutg=min((colorg+finalcolorincrease), 255)
+                finaloutb=min((colorb+finalcolorincrease), 255)
+            lumi = min((0.2126*finaloutr + 0.7152*finaloutg + 0.0722*finaloutb),255)
             if lumi >= 50 and lumi <= 100:
                 lumi = (lumi-(lumi*0.75))
                 if lumi < 0:
@@ -269,7 +268,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
                 lumi = min((lumi+(lumi*0.75)),255)
             greygradient = int2hex(min(int(255-lumi),255))
             textcolors = str(greygradient)+str(greygradient)+str(greygradient)
-            returnvalue = str(finaloutr)+str(finaloutg)+str(finaloutb)
+            returnvalue = str(int2hex(finaloutr))+str(int2hex(finaloutg))+str(int2hex(finaloutb))
         if foundmod:
             break
     return returnvalue

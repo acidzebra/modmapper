@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.5"
+version = "0.7b1"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -14,32 +14,44 @@ version = "0.5"
 # 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
 # 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit
 # 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
-# 0.6 - more map stuff, some new user switches for map color control, brough back color overrides now that randomness seems to work
+# 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work
+# 0.7 - split out ints and exts to separate files, so we can load MOAR MODS, some more config switches
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
 # User-configurable variables, defaults should be fine
+# split into multiple web pages- good for very big modlists
+splitpages = True
 # produces a LOT of noise if turned on (pipe output to a file)
 moreinfo = False
 # normally modmapper cleans up after itself, set to False to disable (for repeated runs for instance)
 deletemodjson = False
 # some padding around the map
 tableborder = 2
-# whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), defaults to true because the alternative is a clown car of a map
+# whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), defaults to true because the alternative is a clown car of a map (bit arguably better to see conflicts there)
 overridetr = True
 # skip these mods if found. You can add any mods you don't want on the map here.
 excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
 #  Map color control settings, not really fiddled with this beyond making them available
 # controls coloring for cells, min value 0 max value should be less than maxbrightness, default 10
-minbrightness = 10
-# sensible values between ~100 and 200, min 11, max 255. No checks or guard rails. Lower values produce more muted colors, default 200
+minbrightness = 5
+# sensible values between ~100 and 200, min is a value above minbrightness, max 255. No checks or guard rails. Lower values produce more muted colors, default 200
 maxbrightness = 200
+# if maincolorsatincreaseonly is set to true, modmapper will increase the "main" RGB channel value (main = whatever channel has the largest value)
+maincolorsatincreaseonly = False
 # improve contrast for cells with few mods affecting them (only for mods, not base game)
 lowmodcountcontrastincrease = True
+# what is considered a "low mod count"
+lowmodcount = 10
+# controls the increase of values between steps (somewhat), values between 0-1 make the most sense, not really tested beyond that, default 1
+stepmodifier = 1
+# background and text color
+bgcolor = "101010"
+txcolor = "808080"
 # water/untouched cell color in web/hex RGB
 watercolor = "2B65EC"
 watertextcolor = "1010ff"
-# color overrides, can add your own here or change colors, color format is web/hex RGB
+# color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
 coloroverride = {}
 coloroverride.update({"Morrowind.esm":"003000"})
 coloroverride.update({"TR_Mainland.esm":"000030"})
@@ -60,7 +72,7 @@ from datetime import datetime
 
 html_header = """
 <HTML>
-<HEADER>
+<HEAD>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -68,38 +80,40 @@ html_header = """
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
+  background-color: """+bgcolor+""";
+  color: """+txcolor+""";
 }
 
 a.linkstuff {
-  color: blue; !important;
+  color: a0a0a0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:visited {
-  color: blue; !important;
+  color: a0a0a0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:hover {
-  color: blue; !important;
+  color: c0c0c0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a.linkstuff:active {
-  color: blue; !important;
+  color: b0b0b0; !important;
   font-weight: bold;
   text-decoration: normal;
 }
 
 a:link {
-  color: 000000;
+  color: 909090;
   text-decoration: none;
 }
 a:visited {
-  color: 000000;
+  color: 909090;
   text-decoration: none;
 }
 a:hover {
@@ -109,7 +123,7 @@ a:hover {
   color: ff0000;
 }
 a:active {
-  color: 000000;
+  color: 909090;
   text-decoration: none;
 } 
 
@@ -147,7 +161,7 @@ td a {
   white-space: normal;
   font-weight: normal;
   visibility: hidden;
-  width: 1000%;
+  width: 1500%;
   background-color: #555;
   color: #fff;
   text-align: left;
@@ -166,10 +180,10 @@ td a {
   visibility: visible;
   font-size: 100%;
   opacity: 1;
-}
-</STYLE>
-</HEADER>
+  </STYLE>
+</HEAD>
 <BODY>
+
 """
 
 html_footer = """
@@ -199,6 +213,7 @@ generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 global textcolors
 textcolors = "000000"
 
+
 def int2hex(x):
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
@@ -208,10 +223,10 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     global textcolors
     foundmod = False
     returnvalue = "606060"
-    basevalue = 10
+    basevalue = 0
     currentmod = ""
-    valuestep = (245/maxmodcellist)
-    if mymodcount <= 5 and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and lowmodcountcontrastincrease:
+    valuestep = stepmodifier*(250/maxmodcellist)
+    if mymodcount <= lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and lowmodcountcontrastincrease:
         valuestep += 10
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
@@ -221,17 +236,38 @@ def calcoutputcellcolor(mymodcount,mymodlist):
             # the following code is a crime in at least six nations
             hexcolors = (basecolorhex[currentmod])
             colorg= hexcolors[:-2]
-            finaloutr=int2hex(min((int((int(hexcolors[:2],16))+finalcolorincrease)), 255))
-            finaloutb=int2hex(min((int((int(hexcolors[4:],16))+finalcolorincrease)), 255))
-            finaloutg=int2hex(min((int(int(colorg[2:],16)+finalcolorincrease)), 255))
+            colorg= int(colorg[2:],16)
+            colorr= int(hexcolors[:2],16)
+            colorb= int(hexcolors[4:],16)
+            if maincolorsatincreaseonly:
+                if colorr > colorg and colorr > colorb:        
+                    finaloutr=int2hex(min((colorr+finalcolorincrease), 255))
+                    finaloutb=int2hex(colorb)
+                    finaloutg=int2hex(colorg)
+                elif colorg > colorr and colorg > colorb:        
+                    finaloutg=int2hex(min((colorg+finalcolorincrease), 255))
+                    finaloutb=int2hex(colorb)
+                    finaloutr=int2hex(colorr)
+                elif colorb > colorg and colorb > colorr:        
+                    finaloutb=int2hex(min((colorb+finalcolorincrease), 255))
+                    finaloutr=int2hex(colorr)
+                    finaloutg=int2hex(colorg)
+                else:
+                    finaloutr=int2hex(min((colorr+finalcolorincrease), 255))
+                    finaloutg=int2hex(min((colorg+finalcolorincrease), 255))
+                    finaloutb=int2hex(min((colorb+finalcolorincrease), 255))
+            else:
+                finaloutr=int2hex(min((colorr+finalcolorincrease), 255))
+                finaloutg=int2hex(min((colorg+finalcolorincrease), 255))
+                finaloutb=int2hex(min((colorb+finalcolorincrease), 255))
             lumi = min((0.2126*int(finaloutr,16) + 0.7152*int(finaloutg,16) + 0.0722*int(finaloutb,16)),255)
-            if lumi <= 100:
+            if lumi >= 50 and lumi <= 100:
                 lumi = (lumi-(lumi*0.75))
                 if lumi < 0:
                     lumi = 0
-            if lumi > 100:
+            if lumi > 100 and lumi <= 150:
                 lumi = min((lumi+(lumi*0.75)),255)
-            greygradient = int2hex(min(abs(int(255-lumi)),255))
+            greygradient = int2hex(min(int(255-lumi),255))
             textcolors = str(greygradient)+str(greygradient)+str(greygradient)
             returnvalue = str(finaloutr)+str(finaloutg)+str(finaloutb)
         if foundmod:
@@ -244,7 +280,7 @@ try:
 except:
     print("usage: put mods + modmapper.py + tes3conv.exe in same folder") 
     print("run: python modmapper.py \"target directory\"")
-    print("output will be saved as modmapper.html")
+    print("output will be saved as index.html")
     sys.exit()
 
 if not os.path.isdir(target_folder):
@@ -275,19 +311,19 @@ if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
 
 for files in esplist:
-    colr = int2hex(randrange(minbrightness, maxbrightness))
-    colg = int2hex(randrange(minbrightness, maxbrightness))
-    colb = int2hex(randrange(minbrightness, maxbrightness))
-    if files in coloroverride:
-        hexcolors = (coloroverride[files])
-        colr = hexcolors[:2]
-        colg = hexcolors[:-2]
-        colg = colg[2:]
-        colb = hexcolors[4:]
-    if files not in basecolorhex:
-        basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
-    tes3convversion = 0
     if files not in excludelist:
+        colr = int2hex(randrange(minbrightness, maxbrightness))
+        colg = int2hex(randrange(minbrightness, maxbrightness))
+        colb = int2hex(randrange(minbrightness, maxbrightness))
+        if files in coloroverride:
+            hexcolors = (coloroverride[files])
+            colr = hexcolors[:2]
+            colg = hexcolors[:-2]
+            colg = colg[2:]
+            colb = hexcolors[4:]
+        if files not in basecolorhex:
+            basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
+        tes3convversion = 0
         jsonfilename = files[:-4]+".json"
         if deletemodjson and os.path.isfile(str(jsonfilename)):
             os.remove(jsonfilename)
@@ -311,7 +347,9 @@ for files in esplist:
                 os.remove(jsonfilename)
             print("examining file",filecounter,"of",len(esplist),":",files)
             for keys in modfile_parsed_json:
+                extcellcounter = 0
                 if keys["type"] == "Cell" and len(keys["references"])>0:
+                    extcellcounter += 1
                     tes3convversioncheck = 0
                     tes3convversioncheck = str(keys["data"]["flags"])
                     if tes3convversioncheck.isdigit():
@@ -416,7 +454,7 @@ while tablerows < tablelength:
                 modifyingmodlist = []
                 modifyingmodlist = dedupe_modlist
                 tooltipdata = """cell: <b>"""+str(values)+"""</b><BR>mods: """+str(modifyingmodlist)
-                formattedextlist = formattedextlist + """<BR><p id=\""""+str(values)+"""\"</p>"""+str(tooltipdata)
+                formattedextlist = formattedextlist + """<BR><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)
             if found:
                 break
 # TODO: this is a truly terrible way to do padding, I should probably manipulate the CSS of the individual table cells instead. BUUUUUT this works for my purposes.
@@ -436,7 +474,7 @@ while tablerows < tablelength:
             paddingright = paddingright + " "
         if found:
             docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
-            td.append("""<td bgcolor=#"""+str(docellcolor)+""" opacity=1 style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"#"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
+            td.append("""<td bgcolor=#"""+str(docellcolor)+""" opacity=1 style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
         else:
             td.append("""<td bgcolor=#"""+watercolor+""" opacity=1 style=\"color:#"""+watertextcolor+""";\"><div class="content">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</div></td>\n""")
         found = False
@@ -453,20 +491,55 @@ for items in masterintdict:
     formattedintlist = formattedintlist + str("""<P>Interior Cell: <b>"""+str(items)+"""</b><BR>Mods:"""+str(masterintdict[items])+"""</P>\n""")
 
 print("exporting HTML")
-html_body = """<p><b>MODMAPPER """+str(version)+"""</b><br>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, skipped """+str(excludecounter)+""" files on the exclude list. Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""<br>"""
-html_body = html_body + """<p> Scroll around map with mouse or keyboard. Hover over cells to see mods affecting cell. Click cell to go to details on exterior cell list (use browser back function to return to map position).<BR>"""
-html_body = html_body + """You will probably want to scroll a good bit to the right and down, there's a lot of sea out there.<BR>"""
-html_body = html_body + """Use browser search to find interior cells or specific mods (example: search for \"guild of\" or \"Akamora\"). Zoom page out with brower zoom function. It's not very responsive or mobile device aware (yet?).<BR>"""
-html_body = html_body + """Blue cells with blue text means no game file or mod touches this cell (textureless ocean). Each mod has a random color assigned which will change every time modmapper runs.</p>"""
-html_body = html_body + """<p>This is a primitive alpha but it seems to run well enough. Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>,code <a href = "https://github.com/acidzebra/modmapper" class="linkstuff">here</a>,nexus page <a href="https://www.nexusmods.com/morrowind/mods/53069" class="linkstuff"">here</a>.</p>"""
-html_body = html_body+"".join(table)
-html_body = html_body+formattedextlist
-html_body = html_body+formattedintlist
-html_output = html_header+html_body+html_footer
+html_body = ""
+html_body = html_body + """<p><b>MODMAPPER """+str(version)+"""</b><br>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
+if excludecounter > 0:
+    html_body = html_body + """ Skipped """+str(excludecounter)+""" files on the exclude list. """
+if failcounter > 0:
+    html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods: """+str(failedmodlist)+"""."""
+html_body = html_body + """
+<p> Scroll around map with mouse or keyboard. Hover over cells to see mods affecting cell. Click cell to go to details on exterior cell list (use browser back function to return to map position).<BR>
+Blue cells with blue text means no game file or mod touches this cell (textureless ocean). Each mod other than the base game and TR/PT has a random color assigned which will change every time modmapper runs.<br>
+You will probably want to use the jump link below or scroll a good bit to the right and down, there's a lot of sea out there. Zoom page out with brower zoom function. It's not very responsive or mobile device aware (yet?).</p>
+<p><a href="#map[34, 21]" class="linkstuff">[CLICK TO JUMP TO VVARDENFEL CENTER]</a></p>
+<p>INTERIORS HAVE MOVED TO <a href="modmapper_interiors.html" class="linkstuff">[A SEPARATE PAGE HERE]</a></p>
+Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>,code <a href = "https://github.com/acidzebra/modmapper" class="linkstuff">here</a>,nexus page <a href="https://www.nexusmods.com/morrowind/mods/53069" class="linkstuff"">here</a>.
+"""
 
-Html_file= open("modmapper.html","w")
-Html_file.write(html_output)
-Html_file.close()
+
+if splitpages:
+    html_body = html_body+"".join(table)
+    index_output = html_header+html_body+html_footer
+
+    html_int_body = """<P>Use browser search to find interior cells or specific mods (example: search for \"guild of\" or \"Akamora\").</P>"""
+    html_int_body += """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
+    html_int_body += formattedintlist
+    interior_output = html_header+html_int_body+html_footer
+
+    html_ext_body = """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
+    html_ext_body = html_ext_body+formattedextlist
+    exterior_output = html_header+html_ext_body+html_footer
+
+    Html_file= open("index.html","w")
+    Html_file.write(index_output)
+    Html_file.close()
+    Html_file= open("modmapper_interiors.html","w")
+    Html_file.write(interior_output)
+    Html_file.close()
+    Html_file= open("modmapper_exteriors.html","w")
+    Html_file.write(exterior_output)
+    Html_file.close()
+else:
+    html_body += "".join(table)
+    html_body += formattedextlist
+    html_body += formattedintlist
+    index_output = html_header+html_body+html_footer
+    Html_file= open("index.html","w")
+    Html_file.write(index_output)
+    Html_file.close()
+
+
+
 print("all done! I hope you enjoy modmapper.")
 
 # Copyright © 2023 acidzebra

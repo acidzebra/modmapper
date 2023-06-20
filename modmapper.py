@@ -8,7 +8,7 @@ version = "0.7b1"
 # (or just dump modmapper.py and tes3conv.exe in your data folder, that's what I do)
 #
 # run python modmapper.py "path-to-modfolder"
-# 
+#
 # 0.1 - initial release
 # 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
 # 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
@@ -19,55 +19,13 @@ version = "0.7b1"
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
-# User-configurable variables, defaults should be fine
-# split into multiple web pages- good for very big modlists
-splitpages = True
-# produces a LOT of noise if turned on (pipe output to a file)
-moreinfo = False
-# normally modmapper cleans up after itself, set to False to disable (for repeated runs for instance)
-deletemodjson = False
-# some padding around the map
-tableborder = 2
-# whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), defaults to true because the alternative is a clown car of a map (bit arguably better to see conflicts there)
-overridetr = True
-# skip these mods if found. You can add any mods you don't want on the map here.
-excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
-#  Map color control settings, not really fiddled with this beyond making them available
-# controls coloring for cells, min value 0 max value should be less than maxbrightness, default 10
-minbrightness = 15
-# sensible values between ~100 and 200, min is a value above minbrightness, max 255. No checks or guard rails. Lower values produce more muted colors, default 200
-maxbrightness = 180
-# improve contrast for cells with few mods affecting them (only for mods, not base game)
-lowmodcountcontrastincrease = True
-# what is considered a "low mod count"
-lowmodcount = 10
-# controls the increase of values between steps (somewhat), values between 0-1 make the most sense, not really tested beyond that, default 1
-stepmodifier = 1
-# background and text color
-bgcolor = "101010"
-txcolor = "808080"
-# water/untouched cell color in web/hex RGB
-watercolor = "2B65EC"
-watertextcolor = "1010ff"
-# color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
-coloroverride = {}
-coloroverride.update({"Morrowind.esm":"002000"})
-coloroverride.update({"TR_Mainland.esm":"000040"})
-coloroverride.update({"TR_Restexteriors.ESP":"400000"})
-coloroverride.update({"Bloodmoon.esm":"003030"})
-coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
-coloroverride.update({"Cyr_Main.esm":"909000"})
-coloroverride.update({"Sky_Main.esm":"001060"})
-# ---  
-        
-import json
 import io
+import json
 import sys
-import os
-from os import listdir
-from os.path import isfile, join
+from os import listdir, path, remove, system
 from random import randrange
 from datetime import datetime
+import static_config as conf
 
 html_header = """
 <HTML>
@@ -79,8 +37,8 @@ html_header = """
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
-  background-color: """+bgcolor+""";
-  color: """+txcolor+""";
+  background-color: """+conf.bgcolor+""";
+  color: """+conf.txcolor+""";
 }
 
 a.linkstuff {
@@ -224,8 +182,8 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     returnvalue = "606060"
     basevalue = 0
     currentmod = ""
-    valuestep = stepmodifier*(250/maxmodcellist)
-    if mymodcount <= lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and lowmodcountcontrastincrease:
+    valuestep = conf.stepmodifier*(250/maxmodcellist)
+    if mymodcount <= conf.lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and conf.lowmodcountcontrastincrease:
         valuestep += 10
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
@@ -238,15 +196,15 @@ def calcoutputcellcolor(mymodcount,mymodlist):
             colorr= int(hexcolors[:2],16)
             colorb= int(hexcolors[4:],16)
             reductionfactor = 2
-            if colorr > colorg and colorr > colorb:        
+            if colorr > colorg and colorr > colorb:
                 finaloutr=min((colorr+finalcolorincrease), 255)
                 finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
                 finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
-            elif colorg > colorr and colorg > colorb:        
+            elif colorg > colorr and colorg > colorb:
                 finaloutg=min((colorg+finalcolorincrease), 255)
                 finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
                 finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
-            elif colorb > colorg and colorb > colorr:        
+            elif colorb > colorg and colorb > colorr:
                 finaloutb=min((colorb+finalcolorincrease), 255)
                 finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
                 finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
@@ -277,18 +235,18 @@ except:
     print("output will be saved as index.html")
     sys.exit()
 
-if not os.path.isdir(target_folder):
+if not path.isdir(target_folder):
     print("FATAL: target directory \"",target_folder,"\"does not exist.")
     sys.exit()
 
-if not os.path.isfile("tes3conv.exe"):
+if not path.isfile("tes3conv.exe"):
     print("FATAL: cannot find path to tes3conv.exe, is it in the same folder as this script?")
     sys.exit()
     
-esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
-esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
+esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esm')]
+esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esp')]
 esplist = sorted(esplist, key=str.casefold)
-if overridetr:
+if conf.overridetr:
     if "TR_Update.ESP" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Update.ESP")))
     if "TR_Restexteriors.ESP" in esplist:
@@ -305,12 +263,12 @@ if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
 
 for files in esplist:
-    if files not in excludelist:
-        colr = int2hex(randrange(minbrightness, maxbrightness))
-        colg = int2hex(randrange(minbrightness, maxbrightness))
-        colb = int2hex(randrange(minbrightness, maxbrightness))
-        if files in coloroverride:
-            hexcolors = (coloroverride[files])
+    if files not in conf.excludelist:
+        colr = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
+        colg = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
+        colb = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
+        if files in conf.coloroverride:
+            hexcolors = (conf.coloroverride[files])
             colr = hexcolors[:2]
             colg = hexcolors[:-2]
             colg = colg[2:]
@@ -319,26 +277,26 @@ for files in esplist:
             basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
         tes3convversion = 0
         jsonfilename = files[:-4]+".json"
-        if deletemodjson and os.path.isfile(str(jsonfilename)):
-            os.remove(jsonfilename)
-        if not os.path.isfile(str(jsonfilename)):
+        if conf.deletemodjson and path.isfile(str(jsonfilename)):
+            remove(jsonfilename)
+        if not path.isfile(str(jsonfilename)):
             try:
                 target = "tes3conv.exe \""+str(files)+"\" \""+str(jsonfilename)+"\""
                 print("running",target)
-                os.system(target)
+                system(target)
             except Exception as e:
                 print("unable to convert mod to json: "+repr(e)) 
-        if not os.path.isfile(str(jsonfilename)):
+        if not path.isfile(str(jsonfilename)):
             failcounter+=1
             failedmodlist = failedmodlist + str(files) + " "
-        if os.path.isfile(str(jsonfilename)):
+        if path.isfile(str(jsonfilename)):
             f = io.open(jsonfilename, mode="r", encoding="utf-8")
             espfile_contents = f.read()
             modfile_parsed_json = json.loads(espfile_contents) 
             f.close()
             del espfile_contents
-            if deletemodjson:
-                os.remove(jsonfilename)
+            if conf.deletemodjson:
+                remove(jsonfilename)
             print("examining file",filecounter,"of",len(esplist),":",files)
             for keys in modfile_parsed_json:
                 extcellcounter = 0
@@ -373,7 +331,7 @@ for files in esplist:
                             modcelltable.append(keys["data"]["grid"])
                         if str(keys["data"]["grid"]) not in mastermoddict:
                             mastermoddict[str(keys["data"]["grid"])] = str(files)
-                            if moreinfo:
+                            if conf.moreinfo:
                                 print("new ext cell",str(keys["data"]["grid"]))
                         else:
                             modcelllist = mastermoddict[str(keys["data"]["grid"])]
@@ -390,7 +348,7 @@ for files in esplist:
                             intcellname = keys["name"]
                         if intcellname not in masterintdict:
                             masterintdict[intcellname] = str(files)
-                            if moreinfo:
+                            if conf.moreinfo:
                                 print("new int cell",intcellname)
                         else:
                             intcelllist = masterintdict[intcellname]
@@ -405,15 +363,15 @@ for files in esplist:
 
 print("Sorting through mods and assembling tables, this will take a while...")
 
-tablexmin = tablexmin - tableborder
-tablexmax = tablexmax + tableborder
-tableymin = tableymin - tableborder
-tableymax = tableymax + tableborder
+tablexmin = tablexmin - conf.tableborder
+tablexmax = tablexmax + conf.tableborder
+tableymin = tableymin - conf.tableborder
+tableymax = tableymax + conf.tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
 
-if moreinfo:
-    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
+if conf.moreinfo:
+    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"conf.tableborder",conf.tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
 
 found = False
@@ -468,9 +426,9 @@ while tablerows < tablelength:
             paddingright = paddingright + " "
         if found:
             docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
-            td.append("""<td bgcolor=#"""+str(docellcolor)+""" opacity=1 style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
+            td.append("""<td conf.bgcolor=#"""+str(docellcolor)+""" opacity=1 style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
         else:
-            td.append("""<td bgcolor=#"""+watercolor+""" opacity=1 style=\"color:#"""+watertextcolor+""";\"><div class="content">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</div></td>\n""")
+            td.append("""<td conf.bgcolor=#"""+conf.watercolor+""" opacity=1 style=\"color:#"""+conf.watertextcolor+""";\"><div class="content">"""+str(paddingleft)+"["+str(tablecolumns-abs(tablexmin))+""",<BR>"""+str(tablerows-abs(tableymin))+"]"+str(paddingright)+"""</div></td>\n""")
         found = False
         tablecolumns+=1
     table.append("\t\t"+"".join(td))
@@ -501,7 +459,7 @@ Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>
 """
 
 
-if splitpages:
+if conf.splitpages:
     html_body = html_body+"".join(table)
     index_output = html_header+html_body+html_footer
 

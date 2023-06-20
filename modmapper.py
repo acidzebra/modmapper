@@ -34,11 +34,9 @@ overridetr = True
 excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
 #  Map color control settings, not really fiddled with this beyond making them available
 # controls coloring for cells, min value 0 max value should be less than maxbrightness, default 10
-minbrightness = 5
+minbrightness = 15
 # sensible values between ~100 and 200, min is a value above minbrightness, max 255. No checks or guard rails. Lower values produce more muted colors, default 200
-maxbrightness = 200
-# if maincolorsatincreaseonly is set to true, modmapper will increase the "main" RGB channel value (main = whatever channel has the largest value)
-maincolorsatincreaseonly = False
+maxbrightness = 180
 # improve contrast for cells with few mods affecting them (only for mods, not base game)
 lowmodcountcontrastincrease = True
 # what is considered a "low mod count"
@@ -58,7 +56,7 @@ coloroverride.update({"TR_Mainland.esm":"000040"})
 coloroverride.update({"TR_Restexteriors.ESP":"400000"})
 coloroverride.update({"Bloodmoon.esm":"003030"})
 coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
-coloroverride.update({"Cyr_Main.esm":"606000"})
+coloroverride.update({"Cyr_Main.esm":"909000"})
 coloroverride.update({"Sky_Main.esm":"001060"})
 # ---  
         
@@ -239,42 +237,19 @@ def calcoutputcellcolor(mymodcount,mymodlist):
             colorg= int(colorg[2:],16)
             colorr= int(hexcolors[:2],16)
             colorb= int(hexcolors[4:],16)
-            reducedincrease = True
-            reductionfactor = 3
-            if maincolorsatincreaseonly:
-                if colorr > colorg and colorr > colorb:        
-                    finaloutr=min((colorr+finalcolorincrease), 255)
-                    finaloutb=colorb
-                    finaloutg=colorg
-                elif colorg > colorr and colorg > colorb:        
-                    finaloutg=min((colorg+finalcolorincrease), 255)
-                    finaloutb=colorb
-                    finaloutr=colorr
-                elif colorb > colorg and colorb > colorr:        
-                    finaloutb=min((colorb+finalcolorincrease), 255)
-                    finaloutr=colorr
-                    finaloutg=colorg
-                else:
-                    finaloutr=min((colorr+finalcolorincrease), 255)
-                    finaloutg=min((colorg+finalcolorincrease), 255)
-                    finaloutb=min((colorb+finalcolorincrease), 255)
-            if reducedincrease:
-                if colorr > colorg and colorr > colorb:        
-                    finaloutr=min((colorr+finalcolorincrease), 255)
-                    finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
-                    finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
-                elif colorg > colorr and colorg > colorb:        
-                    finaloutg=min((colorg+finalcolorincrease), 255)
-                    finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
-                    finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
-                elif colorb > colorg and colorb > colorr:        
-                    finaloutb=min((colorb+finalcolorincrease), 255)
-                    finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
-                    finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
-                else:
-                    finaloutr=min((colorr+finalcolorincrease), 255)
-                    finaloutg=min((colorg+finalcolorincrease), 255)
-                    finaloutb=min((colorb+finalcolorincrease), 255)
+            reductionfactor = 2
+            if colorr > colorg and colorr > colorb:        
+                finaloutr=min((colorr+finalcolorincrease), 255)
+                finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
+                finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
+            elif colorg > colorr and colorg > colorb:        
+                finaloutg=min((colorg+finalcolorincrease), 255)
+                finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
+                finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
+            elif colorb > colorg and colorb > colorr:        
+                finaloutb=min((colorb+finalcolorincrease), 255)
+                finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
+                finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
             else:
                 finaloutr=min((colorr+finalcolorincrease), 255)
                 finaloutg=min((colorg+finalcolorincrease), 255)

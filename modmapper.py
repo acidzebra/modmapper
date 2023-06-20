@@ -448,8 +448,8 @@ tableymin = tableymin - tableborder
 tableymax = tableymax + tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
-midvaluey = int(tableymin+abs(tablewidth/2))
-midvaluex = int(tablexmin+abs(tablelength/2))
+midvaluey = int(tableymin+abs(tablelength/2))
+midvaluex = int(tablexmin+abs(tablewidth/2))
 
 if moreinfo:
     print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)

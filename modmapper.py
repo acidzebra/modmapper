@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # Modmapper for Morrowind
 version = "0.7b1"
 #

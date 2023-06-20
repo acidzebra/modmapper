@@ -53,12 +53,13 @@ watercolor = "2B65EC"
 watertextcolor = "1010ff"
 # color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
 coloroverride = {}
-coloroverride.update({"Morrowind.esm":"001000"})
-coloroverride.update({"TR_Mainland.esm":"000010"})
-coloroverride.update({"TR_Restexteriors.ESP":"100000"})
-coloroverride.update({"Bloodmoon.esm":"001010"})
-coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"100010"})
-coloroverride.update({"Cyr_Main.esm":"101000"})
+coloroverride.update({"Morrowind.esm":"002000"})
+coloroverride.update({"TR_Mainland.esm":"000040"})
+coloroverride.update({"TR_Restexteriors.ESP":"400000"})
+coloroverride.update({"Bloodmoon.esm":"003030"})
+coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
+coloroverride.update({"Cyr_Main.esm":"606000"})
+coloroverride.update({"Sky_Main.esm":"001060"})
 # ---  
         
 import json
@@ -238,6 +239,8 @@ def calcoutputcellcolor(mymodcount,mymodlist):
             colorg= int(colorg[2:],16)
             colorr= int(hexcolors[:2],16)
             colorb= int(hexcolors[4:],16)
+            reducedincrease = True
+            reductionfactor = 3
             if maincolorsatincreaseonly:
                 if colorr > colorg and colorr > colorb:        
                     finaloutr=min((colorr+finalcolorincrease), 255)
@@ -255,6 +258,23 @@ def calcoutputcellcolor(mymodcount,mymodlist):
                     finaloutr=min((colorr+finalcolorincrease), 255)
                     finaloutg=min((colorg+finalcolorincrease), 255)
                     finaloutb=min((colorb+finalcolorincrease), 255)
+            if reducedincrease:
+                if colorr > colorg and colorr > colorb:        
+                    finaloutr=min((colorr+finalcolorincrease), 255)
+                    finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
+                    finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
+                elif colorg > colorr and colorg > colorb:        
+                    finaloutg=min((colorg+finalcolorincrease), 255)
+                    finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
+                    finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
+                elif colorb > colorg and colorb > colorr:        
+                    finaloutb=min((colorb+finalcolorincrease), 255)
+                    finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
+                    finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
+                else:
+                    finaloutr=min((colorr+finalcolorincrease), 255)
+                    finaloutg=min((colorg+finalcolorincrease), 255)
+                    finaloutb=min((colorb+finalcolorincrease), 255)
             else:
                 finaloutr=min((colorr+finalcolorincrease), 255)
                 finaloutg=min((colorg+finalcolorincrease), 255)
@@ -268,7 +288,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
                 lumi = min((lumi+(lumi*0.75)),255)
             greygradient = int2hex(min(int(255-lumi),255))
             textcolors = str(greygradient)+str(greygradient)+str(greygradient)
-            returnvalue = str(int2hex(finaloutr))+str(int2hex(finaloutg))+str(int2hex(finaloutb))
+            returnvalue = str(int2hex(int(finaloutr)))+str(int2hex(int(finaloutg)))+str(int2hex(int(finaloutb)))
         if foundmod:
             break
     return returnvalue

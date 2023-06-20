@@ -81,6 +81,10 @@ html_header = """
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <STYLE>
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
@@ -198,7 +202,7 @@ td a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 5px 0;
 }
 .nav ul {
   display: flex;
@@ -209,7 +213,37 @@ td a {
 .nav a {
   color: #fff;
   text-decoration: none;
-  padding: 7px 15px;
+  padding: 7px 5px;
+}
+
+#myInput {
+  width: 85%;
+  padding: 12px 20px 12px 40px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+}
+
+#myTable {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid #ddd;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 100%;
+  background-color: #101010;
+  color: #808080;
+}
+
+#myTable th, #myTable td {
+  text-align: left;
+  padding: 12px;
+}
+
+#myTable tr {
+  border-bottom: 1px solid #ddd;
+}
+
+#myTable tr.header, #myTable tr:hover {
+  background-color: #ocococ;
 }
   </STYLE>
 </HEAD>
@@ -331,8 +365,8 @@ if overridetr:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))   
-if "Siege at Firemoth Fort.esp" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth Fort.esp")))    
+if "Siege at Firemoth.esp" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth.esp")))    
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
@@ -448,8 +482,8 @@ tableymin = tableymin - tableborder
 tableymax = tableymax + tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
-midvaluey = int(tableymin+abs(tablelength/2))
 midvaluex = int(tablexmin+abs(tablewidth/2))
+midvaluey = int(tableymin+abs(tablelength/2))
 
 if moreinfo:
     print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
@@ -488,11 +522,9 @@ while tablerows < tablelength:
                 modifyingmodlist = []
                 modifyingmodlist = dedupe_modlist
                 tooltipdata = """cell: <b>"""+str(values)+"""</b><BR>mods: """+str(modifyingmodlist)
-                formattedextlist = formattedextlist + """<BR><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)
+                formattedextlist = formattedextlist + """<tr><td><BR><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)+"""</td></tr>\n"""
             if found:
                 break
-
-# TODO: this is a truly terrible way to do padding, I should probably manipulate the CSS of the individual table cells instead. BUUUUUT this works for my purposes.
         paddingleft = ""
         paddingright = ""
         if abs(values[0]) < 100:
@@ -516,7 +548,7 @@ while tablerows < tablelength:
             
             td.append("""<td bgcolor=#"""+str(watercolor)+""" style=\"color:#"""+watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
             if addemptycells:
-                formattedextlist = formattedextlist + """<BR><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL"""
+                formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL</td></tr>"""
         found = False
         tablecolumns+=1
     table.append("\t\t"+"".join(td))
@@ -527,11 +559,39 @@ table.reverse()
 
 print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
+formattedintlist += """
+<input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for cells or mods.." title="Type in a name">
+<table id="myTable">
+"""
 masterintdict = dict(sorted(masterintdict.items())) 
 for items in masterintdict:
-    formattedintlist = formattedintlist + str("""<P>Interior Cell: <b>"""+str(items)+"""</b><BR>Mods:"""+str(masterintdict[items])+"""</P>\n""")
+    formattedintlist += """<tr><span class="tooltiptext"><td>"""+str(items)+""" - """+str(masterintdict[items])+"""</td></span></tr>\n"""
+formattedintlist += """
+</table>
+<script>
+function myFunction() {
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("myInput");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }       
+  }
+}
+</script>
+"""
 
 print("exporting HTML")
+
 html_body = ""
 html_body = html_body + """
 <nav class="nav">
@@ -569,10 +629,37 @@ if splitpages:
 
     html_ext_body = navbarheader
     i = 0
-    while i < 4:
+    while i < 6:
         html_ext_body += """<br>"""
         i+=1
-    html_ext_body += html_ext_body+formattedextlist
+    html_ext_body += """
+    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for cells or mods.." title="Type in a name">
+    <table id="myTable">
+    """
+    html_ext_body += formattedextlist
+    html_ext_body += """
+    </table>
+    <script>
+    function myFunction() {
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("myInput");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("myTable");
+      tr = table.getElementsByTagName("tr");
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+          txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }       
+      }
+    }
+    </script>
+    """
     exterior_output = html_header+html_ext_body+html_footer
     html_file= open("index.html","w")
     html_file.write(index_output)

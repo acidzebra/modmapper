@@ -254,7 +254,7 @@ if conf.overridetr:
     if "TR_Mainland.esm" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))        
+    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
@@ -285,14 +285,14 @@ for files in esplist:
                 print("running",target)
                 system(target)
             except Exception as e:
-                print("unable to convert mod to json: "+repr(e)) 
+                print("unable to convert mod to json: "+repr(e))
         if not path.isfile(str(jsonfilename)):
             failcounter+=1
             failedmodlist = failedmodlist + str(files) + " "
         if path.isfile(str(jsonfilename)):
             f = io.open(jsonfilename, mode="r", encoding="utf-8")
             espfile_contents = f.read()
-            modfile_parsed_json = json.loads(espfile_contents) 
+            modfile_parsed_json = json.loads(espfile_contents)
             f.close()
             del espfile_contents
             if conf.deletemodjson:

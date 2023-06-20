@@ -26,6 +26,7 @@ from os import listdir, path, remove, system
 from random import randrange
 from datetime import datetime
 import static_config as conf
+import html_template as html
 
 basecolorhex = masterintdict = mastermoddict = {}
 intcelllist = modcelllist = failedmodlist = ""
@@ -115,7 +116,7 @@ if not path.isdir(target_folder):
 if not path.isfile("tes3conv.exe"):
     print("FATAL: cannot find path to tes3conv.exe, is it in the same folder as this script?")
     sys.exit()
-    
+
 esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esm')]
 esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esp')]
 esplist = sorted(esplist, key=str.casefold)
@@ -137,6 +138,8 @@ if "Morrowind.esm" in esplist:
 
 for files in esplist:
     if files not in conf.excludelist:
+        # Save for later to dedupe below
+        # colors = [randrange(conf.minbrightness, conf.maxbrightness) for _ in range(3)]
         colr = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
         colg = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
         colb = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
@@ -334,16 +337,16 @@ Demo <a href="https://acidzebra.github.io/modmapper/" class="linkstuff">here</a>
 
 if conf.splitpages:
     html_body = html_body+"".join(table)
-    index_output = html_header+html_body+html_footer
+    index_output = html.header+html_body+html.footer
 
     html_int_body = """<P>Use browser search to find interior cells or specific mods (example: search for \"guild of\" or \"Akamora\").</P>"""
     html_int_body += """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
     html_int_body += formattedintlist
-    interior_output = html_header+html_int_body+html_footer
+    interior_output = html.header+html_int_body+html.footer
 
     html_ext_body = """<P><a href="index.html" class="linkstuff">Click here or use back button to go back to map.</a></P>"""
     html_ext_body = html_ext_body+formattedextlist
-    exterior_output = html_header+html_ext_body+html_footer
+    exterior_output = html.header+html_ext_body+html.footer
 
     Html_file= open("index.html","w")
     Html_file.write(index_output)
@@ -358,7 +361,7 @@ else:
     html_body += "".join(table)
     html_body += formattedextlist
     html_body += formattedintlist
-    index_output = html_header+html_body+html_footer
+    index_output = html.header+html_body+html.footer
     Html_file= open("index.html","w")
     Html_file.write(index_output)
     Html_file.close()

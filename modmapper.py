@@ -27,146 +27,17 @@ from random import randrange
 from datetime import datetime
 import static_config as conf
 
-html_header = """
-<HTML>
-<HEAD>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<STYLE>
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 100%;
-  background-color: """+conf.bgcolor+""";
-  color: """+conf.txcolor+""";
-}
+basecolorhex = masterintdict = mastermoddict = {}
+intcelllist = modcelllist = failedmodlist = ""
+modcelltable = esplist = []
 
-a.linkstuff {
-  color: a0a0a0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a.linkstuff:visited {
-  color: a0a0a0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a.linkstuff:hover {
-  color: c0c0c0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a.linkstuff:active {
-  color: b0b0b0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a:link {
-  color: 909090;
-  text-decoration: none;
-}
-a:visited {
-  color: 909090;
-  text-decoration: none;
-}
-a:hover {
-  background-color: #909090;
-  font-weight: bold;
-  text-decoration: none;
-  color: ff0000;
-}
-a:active {
-  color: 909090;
-  text-decoration: none;
-} 
-
-table {
-  width: 100%;
-  border: none;
-  border-spacing:0;
-  border-collapse: collapse;
-}
-td .content {
-  white-space: pre;
-  aspect-ratio: 1 / 1 ;
-  text-align: center;
-  font-family:"Courier New", Courier, monospace;
-  font-size: 70%;
-}
-td:hover {
-  background-color: #909090;
-  font-weight: bold;
-  color: ff0000;
-}
-td a {
-  display: inline-block;
-  height:100%;
-  width:100%;
-}
-.tooltip {
-  position: relative;
-  display: inline-block;
-  font-size: 100%;
-}
-.tooltip .tooltiptext {
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 100%;
-  white-space: normal;
-  font-weight: normal;
-  visibility: hidden;
-  width: 1500%;
-  background-color: #555;
-  color: #fff;
-  text-align: left;
-  border-radius: 6px;
-  padding: 5px 5px 5px 5px;
-  position: absolute;
-  z-index: 1;
-  bottom: 125%;
-  left: 50%;
-  margin-left: -60px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.tooltip:hover .tooltiptext {
-  white-space: normal;
-  visibility: visible;
-  font-size: 100%;
-  opacity: 1;
-  </STYLE>
-</HEAD>
-<BODY>
-
-"""
-
-html_footer = """
-</BODY>
-</HTML>
-"""
-
-esplist = []
-modcelltable = []
-mastermoddict = {}
-masterintdict = {}
-basecolorhex = {}
+failcounter = excludecounter = tablexmin = tablexmax = tableymax = tableymin = maxmodcelllist = tes3convversion= 0
 filecounter = 1
-tablexmin = 0
-tablexmax = 0
-tableymin = 0
-tableymax = 0
-excludecounter = 0
-failcounter = 0
-failedmodlist = ""
-modcelllist = ""
-intcelllist = ""
-maxmodcellist = 0
-tes3convversion = 0
+
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+
+# Somewhat unfamiliar with the `global keyword but seems unnecessary in a monoscript`
 global textcolors
 textcolors = "000000"
 
@@ -189,7 +60,9 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     for items in mymodlist:
         currentmod = items
         if not foundmod and currentmod in basecolorhex:
-            found = True
+            # Unused?
+            # found = True
+
             hexcolors = (basecolorhex[currentmod])
             colorg= hexcolors[:-2]
             colorg= int(colorg[2:],16)

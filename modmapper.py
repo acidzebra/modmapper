@@ -42,7 +42,6 @@ generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 global textcolors
 textcolors = "000000"
 
-
 def int2hex(x):
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
@@ -117,8 +116,10 @@ if not path.isfile("tes3conv.exe"):
     print("FATAL: cannot find path to tes3conv.exe, is it in the same folder as this script?")
     sys.exit()
 
-esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esm')]
-esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esp')]
+# esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esm')]
+# I'm kind skeptical about this but we'll have to test it at runtime, fam
+esplist += [filename for filename in listdir(target_folder) if filename.lower().rsplit('.')[2] in ["esp", "esm", "omwaddon"]]
+# esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esp') or each.lower().endswith('.esm')]
 esplist = sorted(esplist, key=str.casefold)
 if conf.overridetr:
     if "TR_Update.ESP" in esplist:

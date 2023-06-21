@@ -350,12 +350,12 @@ table.reverse()
 
 print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
-formattedintlist += intexttableopen
+formattedintlist += html.intexttableopen
 
 masterintdict = dict(sorted(masterintdict.items()))
 for items in masterintdict:
     formattedintlist += """<tr><span class="tooltiptext"><td>Cell: <b>"""+str(items)+"""</b><BR>Mods: """+str(masterintdict[items])+"""</td></span></tr>\n"""
-formattedintlist += intexttableclose
+formattedintlist += html.intexttableclose
 
 print("exporting HTML")
 

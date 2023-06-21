@@ -35,12 +35,6 @@ intcelllist = modcelllist = failedmodlist = ""
 modcelltable = esplist = []
 
 failcounter = excludecounter = tablexmin = tablexmax = tableymax = tableymin = maxmodcelllist = tes3convversion = 0
-
-esplist = []
-modcelltable = []
-mastermoddict = {}
-masterintdict = {}
-basecolorhex = {}
 filecounter = 1
 
 interiorcell = False

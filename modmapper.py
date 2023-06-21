@@ -15,7 +15,7 @@ version = "0.7b3"
 # 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit
 # 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
 # 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work
-# 0.7 - split out ints and exts to separate files, so we can load MOAR MODS, some more config switches
+# 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -60,7 +60,8 @@ coloroverride.update({"Bloodmoon.esm":"003030"})
 coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
 coloroverride.update({"Cyr_Main.esm":"909000"})
 coloroverride.update({"Sky_Main.esm":"001060"})
-
+# the default name of the exported file (THIS SWITCH DOES NOTHING CURRENTLY)
+exportfilename = "index.html"
 # ---  
         
 import json
@@ -202,7 +203,7 @@ td a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 0;
+  padding: 0px 2px;
 }
 .nav ul {
   display: flex;
@@ -213,36 +214,36 @@ td a {
 .nav a {
   color: #fff;
   text-decoration: none;
-  padding: 7px 5px;
+  padding: 0px 5px;
 }
 
-#myInput {
+#intextinput {
   width: 85%;
   padding: 12px 20px 12px 40px;
   border: 1px solid #ddd;
   margin-bottom: 12px;
 }
 
-#myTable {
+#intexttable {
   border-collapse: collapse;
   width: 100%;
   border: 1px solid #ddd;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 100%;
+  font-size: 80%;
   background-color: #101010;
   color: #808080;
 }
 
-#myTable th, #myTable td {
+#intexttable th, #intexttable td {
   text-align: left;
   padding: 12px;
 }
 
-#myTable tr {
+#intexttable tr {
   border-bottom: 1px solid #ddd;
 }
 
-#myTable tr.header, #myTable tr:hover {
+#intexttable tr.header, #intexttable tr:hover {
   background-color: #ocococ;
 }
   </STYLE>
@@ -254,6 +255,34 @@ html_footer = """
 </div>
 </BODY>
 </HTML>
+"""
+
+intexttableopen = """
+    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Search for cells or mods.." title="Type in a name">
+    <table id="intexttable">
+    """
+intexttableclose = """
+</table>
+<script>
+function intextsearch() {
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("intextinput");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("intexttable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }       
+  }
+}
+</script>
 """
 
 esplist = []
@@ -522,7 +551,7 @@ while tablerows < tablelength:
                 modifyingmodlist = []
                 modifyingmodlist = dedupe_modlist
                 tooltipdata = """cell: <b>"""+str(values)+"""</b><BR>mods: """+str(modifyingmodlist)
-                formattedextlist = formattedextlist + """<tr><td><BR><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)+"""</td></tr>\n"""
+                formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)+"""</td></tr>\n"""
             if found:
                 break
         paddingleft = ""
@@ -559,36 +588,12 @@ table.reverse()
 
 print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
-formattedintlist += """
-<input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for cells or mods.." title="Type in a name">
-<table id="myTable">
-"""
+formattedintlist += intexttableopen
+
 masterintdict = dict(sorted(masterintdict.items())) 
 for items in masterintdict:
     formattedintlist += """<tr><span class="tooltiptext"><td>"""+str(items)+""" - """+str(masterintdict[items])+"""</td></span></tr>\n"""
-formattedintlist += """
-</table>
-<script>
-function myFunction() {
-  var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("myInput");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("myTable");
-  tr = table.getElementsByTagName("tr");
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      txtValue = td.textContent || td.innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
-    }       
-  }
-}
-</script>
-"""
+formattedintlist += intexttableclose 
 
 print("exporting HTML")
 
@@ -632,34 +637,9 @@ if splitpages:
     while i < 6:
         html_ext_body += """<br>"""
         i+=1
-    html_ext_body += """
-    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for cells or mods.." title="Type in a name">
-    <table id="myTable">
-    """
+    html_ext_body += intexttableopen
     html_ext_body += formattedextlist
-    html_ext_body += """
-    </table>
-    <script>
-    function myFunction() {
-      var input, filter, table, tr, td, i, txtValue;
-      input = document.getElementById("myInput");
-      filter = input.value.toUpperCase();
-      table = document.getElementById("myTable");
-      tr = table.getElementsByTagName("tr");
-      for (i = 0; i < tr.length; i++) {
-        td = tr[i].getElementsByTagName("td")[0];
-        if (td) {
-          txtValue = td.textContent || td.innerText;
-          if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            tr[i].style.display = "";
-          } else {
-            tr[i].style.display = "none";
-          }
-        }       
-      }
-    }
-    </script>
-    """
+    html_ext_body += intexttableclose
     exterior_output = html_header+html_ext_body+html_footer
     html_file= open("index.html","w")
     html_file.write(index_output)

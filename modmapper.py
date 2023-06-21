@@ -146,7 +146,10 @@ if not path.isfile("tes3conv.exe"):
 
 # esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esm')]
 # I'm kind skeptical about this but we'll have to test it at runtime, fam
-esplist += [filename for filename in listdir(target_folder) if filename.lower().rsplit('.')[2] in ["esp", "esm", "omwaddon"]]
+try:
+    esplist += [filename for filename in listdir(target_folder) if filename.lower().rsplit('.')[1] in ["esp", "esm", "omwaddon"]]
+except KeyError as badKey:
+    print("Bad key at " + badKey)
 # esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esp') or each.lower().endswith('.esm')]
 esplist = sorted(esplist, key=str.casefold)
 if conf.overridetr:

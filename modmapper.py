@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.7b3"
+version = "0.7b4"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -15,7 +15,7 @@ version = "0.7b3"
 # 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit
 # 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
 # 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work
-# 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages
+# 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages, some css/presentation cleanup
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -218,10 +218,13 @@ td a {
 }
 
 #intextinput {
-  width: 85%;
+  width: 40%;
   padding: 12px 20px 12px 40px;
   border: 1px solid #ddd;
   margin-bottom: 12px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #intexttable {
@@ -230,13 +233,14 @@ td a {
   border: 1px solid #ddd;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 80%;
-  background-color: #101010;
-  color: #808080;
 }
 
 #intexttable th, #intexttable td {
   text-align: left;
   padding: 12px;
+  font-weight: normal;
+  text-decoration: none;
+  color: #d0d0d0;
 }
 
 #intexttable tr {
@@ -258,9 +262,10 @@ html_footer = """
 """
 
 intexttableopen = """
-    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Search for cells or mods.." title="Type in a name">
+
     <table id="intexttable">
     """
+
 intexttableclose = """
 </table>
 <script>
@@ -592,22 +597,30 @@ formattedintlist += intexttableopen
 
 masterintdict = dict(sorted(masterintdict.items())) 
 for items in masterintdict:
-    formattedintlist += """<tr><span class="tooltiptext"><td>"""+str(items)+""" - """+str(masterintdict[items])+"""</td></span></tr>\n"""
+    formattedintlist += """<tr><span class="tooltiptext"><td>Cell: <b>"""+str(items)+"""</b><BR>Mods: """+str(masterintdict[items])+"""</td></span></tr>\n"""
 formattedintlist += intexttableclose 
 
 print("exporting HTML")
 
 html_body = ""
-html_body = html_body + """
-<nav class="nav">
-  <div class="flex-container">
-    <h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
-if excludecounter > 0:
-    html_body = html_body + """ Skipped """+str(excludecounter)+""" files on the exclude list. """
-if failcounter > 0:
-    html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods."""
+html_int_body = ""
+html_ext_body = ""
 
-html_body = html_body + """
+html_allpage_navbar_start = """
+<nav class="nav">
+<div class="flex-container">
+<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
+
+html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
+if excludecounter > 0:
+    html_mainpage_navbar_mid += """ Skipped """+str(excludecounter)+""" files on the exclude list. """
+if failcounter > 0:
+    html_mainpage_navbar_mid += """ Failed to convert """+str(failcounter)+""" mods."""
+
+html_intextpage_navbar_mid = """    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter cells or mods.." title="Type something">"""
+
+
+html_allpage_navbar_end = """
     <ul>
       <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
       <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
@@ -618,13 +631,19 @@ html_body = html_body + """
   </div>
 </nav>
 """
-navbarheader = html_body
+
 
 if splitpages:
-    html_body = html_body+"".join(table)
+    # index page
+    html_body += html_allpage_navbar_start
+    html_body += html_mainpage_navbar_mid
+    html_body += html_allpage_navbar_end
+    html_body += html_body+"".join(table)
     index_output = html_header+html_body+html_footer
-
-    html_int_body = navbarheader
+    # int page
+    html_int_body += html_allpage_navbar_start
+    html_int_body += html_intextpage_navbar_mid
+    html_int_body += html_allpage_navbar_end
     i = 0
     while i < 6:
         html_int_body += """<br>"""
@@ -632,7 +651,9 @@ if splitpages:
     html_int_body += formattedintlist
     interior_output = html_header+html_int_body+html_footer
 
-    html_ext_body = navbarheader
+    html_ext_body += html_allpage_navbar_start
+    html_ext_body += html_intextpage_navbar_mid
+    html_ext_body += html_allpage_navbar_end
     i = 0
     while i < 6:
         html_ext_body += """<br>"""

@@ -338,7 +338,7 @@ while tablerows < tablelength:
             td.append("""<td bgcolor=#"""+str(conf.watercolor)+""" style=\"color:#"""+conf.watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
 
             # This variable *is* defined, but seeingly is complaining due to other factors
-            if addemptycells:
+            if conf.addemptycells:
                 formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL</td></tr>"""
         found = False
         tablecolumns+=1

@@ -2,7 +2,7 @@
 
 # Modmapper for Morrowind
 # Modmapper for Morrowind
-version = "0.7b2ish"
+version = "0.7b4"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -17,7 +17,7 @@ version = "0.7b2ish"
 # 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit
 # 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
 # 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work
-# 0.7 - split out ints and exts to separate files, so we can load MOAR MODS, some more config switches
+# 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages, some css/presentation cleanup
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -35,6 +35,12 @@ intcelllist = modcelllist = failedmodlist = ""
 modcelltable = esplist = []
 
 failcounter = excludecounter = tablexmin = tablexmax = tableymax = tableymin = maxmodcelllist = tes3convversion = 0
+
+esplist = []
+modcelltable = []
+mastermoddict = {}
+masterintdict = {}
+basecolorhex = {}
 filecounter = 1
 
 interiorcell = False
@@ -152,8 +158,8 @@ if conf.overridetr:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))
-if "Siege at Firemoth Fort.esm" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth Fort.esm")))
+if "Siege at Firemoth.esp" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth.esp")))
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
@@ -268,11 +274,12 @@ tablexmax = tablexmax + conf.tableborder
 tableymin = tableymin - conf.tableborder
 tableymax = tableymax + conf.tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
-midvaluex = tablexmin+abs(tablexmax)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
-midvaluey = tableymin+abs(tableymax)
-if conf.moreinfo:
-    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"conf.tableborder",conf.tableborder)
+midvaluex = int(tablexmin+abs(tablewidth/2))
+midvaluey = int(tableymin+abs(tablelength/2))
+
+if moreinfo:
+    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
 
 found = False
@@ -308,10 +315,9 @@ while tablerows < tablelength:
                 modifyingmodlist = []
                 modifyingmodlist = dedupe_modlist
                 tooltipdata = """cell: <b>"""+str(values)+"""</b><BR>mods: """+str(modifyingmodlist)
-                formattedextlist = formattedextlist + """<BR><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)
+                formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)+"""</td></tr>\n"""
             if found:
                 break
-            # TODO: this is a truly terrible way to do padding, I should probably manipulate the CSS of the individual table cells instead. BUUUUUT this works for my purposes.
         paddingleft = ""
         paddingright = ""
         if abs(values[0]) < 100:
@@ -336,7 +342,7 @@ while tablerows < tablelength:
 
             # This variable *is* defined, but seeingly is complaining due to other factors
             if addemptycells:
-                formattedextlist = formattedextlist + """<BR><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL"""
+                formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL</td></tr>"""
         found = False
         tablecolumns+=1
     table.append("\t\t"+"".join(td))
@@ -347,22 +353,34 @@ table.reverse()
 
 print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
-masterintdict = dict(sorted(masterintdict.items())) 
+formattedintlist += intexttableopen
+
+masterintdict = dict(sorted(masterintdict.items()))
 for items in masterintdict:
-    formattedintlist = formattedintlist + str("""<P>Interior Cell: <b>"""+str(items)+"""</b><BR>Mods:"""+str(masterintdict[items])+"""</P>\n""")
+    formattedintlist += """<tr><span class="tooltiptext"><td>Cell: <b>"""+str(items)+"""</b><BR>Mods: """+str(masterintdict[items])+"""</td></span></tr>\n"""
+formattedintlist += intexttableclose
 
 print("exporting HTML")
-html_body = ""
-html_body = html_body + """
-<nav class="nav">
-  <div class="flex-container">
-    <h1 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h1>Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
-if excludecounter > 0:
-    html_body = html_body + """ Skipped """+str(excludecounter)+""" files on the exclude list. """
-if failcounter > 0:
-    html_body = html_body + """ Failed to convert """+str(failcounter)+""" mods."""
 
-html_body = html_body + """
+html_body = ""
+html_int_body = ""
+html_ext_body = ""
+
+html_allpage_navbar_start = """
+<nav class="nav">
+<div class="flex-container">
+<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
+
+html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
+if excludecounter > 0:
+    html_mainpage_navbar_mid += """ Skipped """+str(excludecounter)+""" files on the exclude list. """
+if failcounter > 0:
+    html_mainpage_navbar_mid += """ Failed to convert """+str(failcounter)+""" mods."""
+
+html_intextpage_navbar_mid = """    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter cells or mods.." title="Type something">"""
+
+
+html_allpage_navbar_end = """
     <ul>
       <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
       <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
@@ -373,7 +391,7 @@ html_body = html_body + """
   </div>
 </nav>
 """
-navbarheader = html_body
+
 
 if conf.splitpages:
     html_body = html_body+"".join(table)
@@ -387,13 +405,17 @@ if conf.splitpages:
     html_int_body += formattedintlist
     interior_output = html.header+html_int_body+html.footer
 
-    html_ext_body = navbarheader
+    html_ext_body += html_allpage_navbar_start
+    html_ext_body += html_intextpage_navbar_mid
+    html_ext_body += html_allpage_navbar_end
     i = 0
-    while i < 4:
+    while i < 6:
         html_ext_body += """<br>"""
         i+=1
-    html_ext_body += html_ext_body+formattedextlist
-    exterior_output = html.header+html_ext_body+html.footer
+    html_ext_body += intexttableopen
+    html_ext_body += formattedextlist
+    html_ext_body += intexttableclose
+    exterior_output = html_header+html_ext_body+html_footer
     html_file= open("index.html","w")
     html_file.write(index_output)
     html_file.close()

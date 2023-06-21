@@ -4,7 +4,7 @@ txcolor = "808080"
 
 from modmapper import version
 
-header = """
+html_header = """
 <!DOCTYPE html>
 <HTML>
 <HEAD>
@@ -13,6 +13,10 @@ header = """
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <STYLE>
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 100%;
@@ -61,7 +65,7 @@ a:hover {
 a:active {
   color: #909090;
   text-decoration: none;
-} 
+}
 
 table {
   width: 100%;
@@ -130,7 +134,7 @@ td a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 0;
+  padding: 0px 2px;
 }
 .nav ul {
   display: flex;
@@ -141,7 +145,41 @@ td a {
 .nav a {
   color: #fff;
   text-decoration: none;
-  padding: 7px 15px;
+  padding: 0px 5px;
+}
+
+#intextinput {
+  width: 40%;
+  padding: 12px 20px 12px 40px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#intexttable {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid #ddd;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 80%;
+}
+
+#intexttable th, #intexttable td {
+  text-align: left;
+  padding: 12px;
+  font-weight: normal;
+  text-decoration: none;
+  color: #d0d0d0;
+}
+
+#intexttable tr {
+  border-bottom: 1px solid #ddd;
+}
+
+#intexttable tr.header, #intexttable tr:hover {
+  background-color: #ocococ;
 }
   </STYLE>
 </HEAD>
@@ -152,4 +190,34 @@ footer = """
 </div>
 </BODY>
 </HTML>
+"""
+
+
+intexttableopen = """
+
+    <table id="intexttable">
+    """
+
+intexttableclose = """
+</table>
+<script>
+function intextsearch() {
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("intextinput");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("intexttable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }       
+  }
+}
+</script>
 """

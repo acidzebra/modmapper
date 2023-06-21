@@ -4,7 +4,7 @@ txcolor = "808080"
 
 from modmapper import version
 
-html_header = """
+header = """
 <!DOCTYPE html>
 <HTML>
 <HEAD>
@@ -216,7 +216,7 @@ function intextsearch() {
       } else {
         tr[i].style.display = "none";
       }
-    }       
+    }
   }
 }
 </script>

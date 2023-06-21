@@ -275,8 +275,8 @@ tablelength = int(abs(tableymax)+abs(tableymin)+1)
 midvaluex = int(tablexmin+abs(tablewidth/2))
 midvaluey = int(tableymin+abs(tablelength/2))
 
-if moreinfo:
-    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
+if conf.moreinfo:
+    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",conf.tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
 
 found = False

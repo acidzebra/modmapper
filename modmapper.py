@@ -394,7 +394,7 @@ if conf.splitpages:
     html_body = html_body+"".join(table)
     index_output = html.header+html_body+html.footer
 
-    html_int_body = navbarheader
+    html_int_body = html.navbarheader
     i = 0
     while i < 6:
         html_int_body += """<br>"""
@@ -409,10 +409,10 @@ if conf.splitpages:
     while i < 6:
         html_ext_body += """<br>"""
         i+=1
-    html_ext_body += intexttableopen
+    html_ext_body += html.intexttableopen
     html_ext_body += formattedextlist
-    html_ext_body += intexttableclose
-    exterior_output = html_header+html_ext_body+html_footer
+    html_ext_body += html.intexttableclose
+    exterior_output = html.header+html_ext_body+html.footer
     html_file= open("index.html","w")
     html_file.write(index_output)
     html_file.close()

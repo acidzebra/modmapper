@@ -115,8 +115,8 @@ def calcoutputcellcolor(mymodcount,mymodlist):
                 lumi = min((lumi+(lumi*0.75)),255)
 
             # Dead code? Oh god I just realized the indentation is wrong
-            # greygradient = int2hex(min(int(255-lumi),255))
-            # textcolors = str(greygradient)+str(greygradient)+str(greygradient)
+            greygradient = int2hex(min(int(255-lumi),255))
+            textcolors = str(greygradient)+str(greygradient)+str(greygradient)
             returnvalue = str(int2hex(int(finaloutr)))+str(int2hex(int(finaloutg)))+str(int2hex(int(finaloutb)))
         if foundmod:
             break

@@ -315,33 +315,33 @@ while tablerows < tablelength:
                 formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)+"""</td></tr>\n"""
             if found:
                 break
-        paddingleft = ""
-        paddingright = ""
-        if abs(values[0]) < 100:
-            paddingleft = " "
-        if abs(values[0]) < 10:
-            paddingleft = "  "
-        if paddingleft and values[0] > -1:
-            paddingleft += " "
-        if abs(values[1]) < 100:
-            paddingright = "  "
-        if abs(values[1]) < 10:
-            paddingright = "   "
-        if paddingright and values[1] > -1:
-            paddingright += " "
-        cellx = str(int(tablecolumns-abs(tablexmin)))
-        celly = str(int(tablerows-abs(tableymin)))
-        if found:
-            docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
-            td.append("""<td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
-        else:
-            td.append("""<td bgcolor=#"""+str(conf.watercolor)+""" style=\"color:#"""+conf.watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
+            paddingleft = ""
+            paddingright = ""
+            if abs(values[0]) < 100:
+                paddingleft = " "
+            if abs(values[0]) < 10:
+                paddingleft = "  "
+            if paddingleft and values[0] > -1:
+                paddingleft += " "
+            if abs(values[1]) < 100:
+                paddingright = "  "
+            if abs(values[1]) < 10:
+                paddingright = "   "
+            if paddingright and values[1] > -1:
+                paddingright += " "
+                cellx = str(int(tablecolumns-abs(tablexmin)))
+                celly = str(int(tablerows-abs(tableymin)))
+            if found:
+                docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
+                td.append("""<td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
+            else:
+                td.append("""<td bgcolor=#"""+str(conf.watercolor)+""" style=\"color:#"""+conf.watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
 
-            # This variable *is* defined, but seeingly is complaining due to other factors
-            if conf.addemptycells:
-                formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL</td></tr>"""
-        found = False
-        tablecolumns+=1
+                # This variable *is* defined, but seeingly is complaining due to other factors
+                if conf.addemptycells:
+                    formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL</td></tr>"""
+            found = False
+            tablecolumns+=1
     table.append("\t\t"+"".join(td))
     table.append("""\t<tr>\n""")
     tablerows+=1

@@ -22,8 +22,7 @@
 import io
 import json
 import sys
-from os import listdir, path, remove, system
-from platform import system as user_os
+from os import listdir, path, remove, system, name
 from random import randrange
 from datetime import datetime
 import static_config as conf
@@ -38,7 +37,7 @@ filecounter = 1
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
-tes3conv_binary = "tes3conv" + (".exe" if user_os == "Windows" else '')
+tes3conv_binary = "tes3conv" + (".exe" if name == "Windows" else '')
 
 global textcolors
 textcolors = "000000"

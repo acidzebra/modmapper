@@ -1,5 +1,6 @@
+#!/usr/bin/env python
+
 # Modmapper for Morrowind
-version = "0.7b4"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -8,7 +9,6 @@ version = "0.7b4"
 # (or just dump modmapper.py and tes3conv.exe in your data folder, that's what I do)
 #
 # run python modmapper.py "path-to-modfolder"
-# 
 # 0.1 - initial release
 # 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
 # 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
@@ -19,314 +19,72 @@ version = "0.7b4"
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
-# User-configurable variables, defaults should be fine
-# split into multiple web pages- good for very big modlists
-splitpages = True
-# produces a LOT of noise if turned on (pipe output to a file)
-moreinfo = False
-# normally modmapper cleans up after itself, set to False to disable (for repeated runs for instance)
-deletemodjson = False
-# some padding around the map
-tableborder = 2
-# whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), defaults to true because the alternative is a clown car of a map (bit arguably better to see conflicts there)
-overridetr = True
-# skip these mods if found. You can add any mods you don't want on the map here.
-excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
-#  Map color control settings, not really fiddled with this beyond making them available
-# controls coloring for cells, min value 0 max value should be less than maxbrightness, default 10
-minbrightness = 15
-# sensible values between ~100 and 200, min is a value above minbrightness, max 255. No checks or guard rails. Lower values produce more muted colors, default 200
-maxbrightness = 180
-# improve contrast for cells with few mods affecting them (only for mods, not base game)
-lowmodcountcontrastincrease = True
-# what is considered a "low mod count"
-lowmodcount = 10
-# controls the increase of values between steps (somewhat), values between 0-1 make the most sense, not really tested beyond that, default 1
-stepmodifier = 1
-# background and text color
-bgcolor = "101010"
-txcolor = "808080"
-# water/untouched cell color in web/hex RGB
-watercolor = "2B65EC"
-watertextcolor = "1010ff"
-# add empty cells to the exterior cell list. This will make that list VERY long and the program VERY slow.
-addemptycells = False
-# color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
-coloroverride = {}
-coloroverride.update({"Morrowind.esm":"002000"})
-coloroverride.update({"TR_Mainland.esm":"000040"})
-coloroverride.update({"TR_Restexteriors.ESP":"400000"})
-coloroverride.update({"Bloodmoon.esm":"003030"})
-coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
-coloroverride.update({"Cyr_Main.esm":"909000"})
-coloroverride.update({"Sky_Main.esm":"001060"})
-# the default name of the exported file (THIS SWITCH DOES NOTHING CURRENTLY)
-exportfilename = "index.html"
-# ---  
-        
-import json
 import io
+import json
 import sys
-import os
-from os import listdir
-from os.path import isfile, join
+from os import listdir, path, remove, system, name
 from random import randrange
 from datetime import datetime
+import static_config as conf
 
-html_header = """
-<!DOCTYPE html>
-<HTML>
-<HEAD>
-<title>Morrowind Modmapper v"""+str(version)+"""+</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<STYLE>
-* {
-  box-sizing: border-box;
-}
+basecolorhex = masterintdict = mastermoddict = {}
+intcelllist = modcelllist = failedmodlist = ""
+modcelltable = esplist = []
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 100%;
-  background-color: #101010;
-  color: #808080;
-}
-
-a.linkstuff {
-  color: #a0a0a0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a.linkstuff:visited {
-  color: #a0a0a0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a.linkstuff:hover {
-  color: #c0c0c0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a.linkstuff:active {
-  color: #b0b0b0; !important;
-  font-weight: bold;
-  text-decoration: normal;
-}
-
-a:link {
-  color: #909090;
-  text-decoration: none;
-}
-a:visited {
-  color: #909090;
-  text-decoration: none;
-}
-a:hover {
-  background-color: #909090;
-  font-weight: bold;
-  text-decoration: none;
-  color: ff0000;
-}
-a:active {
-  color: #909090;
-  text-decoration: none;
-} 
-
-table {
-  width: 100%;
-  border: none;
-  border-spacing:0;
-  border-collapse: collapse;
-}
-td .content {
-  white-space: pre;
-  aspect-ratio: 1 / 1 ;
-  text-align: center;
-  font-family:"Courier New", Courier, monospace;
-  font-size: 70%;
-}
-td:hover {
-  background-color: #909090;
-  font-weight: bold;
-  color: #ff0000;
-}
-td a {
-  display: inline-block;
-  height:100%;
-  width:100%;
-}
-.tooltip {
-  position: relative;
-  display: inline-block;
-  font-size: 100%;
-}
-.tooltip .tooltiptext {
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 100%;
-  white-space: normal;
-  font-weight: normal;
-  visibility: hidden;
-  width: 1500%;
-  background-color: #555;
-  color: #fff;
-  text-align: left;
-  border-radius: 6px;
-  padding: 5px 5px 5px 5px;
-  position: absolute;
-  z-index: 1;
-  bottom: 125%;
-  left: 50%;
-  margin-left: -60px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.tooltip:hover .tooltiptext {
-  white-space: normal;
-  visibility: visible;
-  font-size: 100%;
-  opacity: 1;
-}
-.nav {
-  position: fixed;
-  background-color: #06111c;
-  background: #06111c;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 500;
-}
-.flex-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0px 2px;
-}
-.nav ul {
-  display: flex;
-  list-style-type: none;
-  align-items: center;
-  justify-content: center;
-}
-.nav a {
-  color: #fff;
-  text-decoration: none;
-  padding: 0px 5px;
-}
-
-#intextinput {
-  width: 40%;
-  padding: 12px 20px 12px 40px;
-  border: 1px solid #ddd;
-  margin-bottom: 12px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#intexttable {
-  border-collapse: collapse;
-  width: 100%;
-  border: 1px solid #ddd;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 80%;
-}
-
-#intexttable th, #intexttable td {
-  text-align: left;
-  padding: 12px;
-  font-weight: normal;
-  text-decoration: none;
-  color: #d0d0d0;
-}
-
-#intexttable tr {
-  border-bottom: 1px solid #ddd;
-}
-
-#intexttable tr.header, #intexttable tr:hover {
-  background-color: #ocococ;
-}
-  </STYLE>
-</HEAD>
-<BODY>
-"""
-
-html_footer = """
-</div>
-</BODY>
-</HTML>
-"""
-
-intexttableopen = """
-
-    <table id="intexttable">
-    """
-
-intexttableclose = """
-</table>
-<script>
-function intextsearch() {
-  var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("intextinput");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("intexttable");
-  tr = table.getElementsByTagName("tr");
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      txtValue = td.textContent || td.innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
-    }       
-  }
-}
-</script>
-"""
-
-esplist = []
-modcelltable = []
-mastermoddict = {}
-masterintdict = {}
-basecolorhex = {}
+failcounter = excludecounter = tablexmin = tablexmax = tableymax = tableymin = maxmodcelllist = tes3convversion = 0
 filecounter = 1
-tablexmin = 0
-tablexmax = 0
-tableymin = 0
-tableymax = 0
-excludecounter = 0
-failcounter = 0
-failedmodlist = ""
-modcelllist = ""
-intcelllist = ""
-maxmodcellist = 0
-tes3convversion = 0
+
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+
+tes3conv_binary = "tes3conv" + (".exe" if name == "Windows" else '')
+
 global textcolors
 textcolors = "000000"
 
+def which(program):
+    """
+    Function to determine where the program is in the system, if anywhere.
+    """
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, _ = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 def int2hex(x):
+    """
+    Converts an integer into hex representation without the leading 0x, e.g.
+    25 returns 19
+    """
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
     return val
 
 def calcoutputcellcolor(mymodcount,mymodlist):
-    global textcolors
+    """
+    Determines the color of the table
+    """
     foundmod = False
     returnvalue = "606060"
     basevalue = 0
     currentmod = ""
-    valuestep = stepmodifier*(250/maxmodcellist)
-    if mymodcount <= lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and lowmodcountcontrastincrease:
+    valuestep = conf.stepmodifier*(250/maxmodcellist)
+
+    # On short load orders, conditionally increase the contrast of this cell (the literal cell represented by the cell in the table
+    if mymodcount <= conf.lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and conf.lowmodcountcontrastincrease:
         valuestep += 10
+
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
         currentmod = items
@@ -338,15 +96,15 @@ def calcoutputcellcolor(mymodcount,mymodlist):
             colorr= int(hexcolors[:2],16)
             colorb= int(hexcolors[4:],16)
             reductionfactor = 2
-            if colorr > colorg and colorr > colorb:        
+            if colorr > colorg and colorr > colorb:
                 finaloutr=min((colorr+finalcolorincrease), 255)
                 finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
                 finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
-            elif colorg > colorr and colorg > colorb:        
+            elif colorg > colorr and colorg > colorb:
                 finaloutg=min((colorg+finalcolorincrease), 255)
                 finaloutb=min((colorb+(finalcolorincrease/reductionfactor)), 255)
                 finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
-            elif colorb > colorg and colorb > colorr:        
+            elif colorb > colorg and colorb > colorr:
                 finaloutb=min((colorb+finalcolorincrease), 255)
                 finaloutr=min((colorr+(finalcolorincrease/reductionfactor)), 255)
                 finaloutg=min((colorg+(finalcolorincrease/reductionfactor)), 255)
@@ -361,6 +119,8 @@ def calcoutputcellcolor(mymodcount,mymodlist):
                     lumi = 0
             if lumi > 100 and lumi <= 150:
                 lumi = min((lumi+(lumi*0.75)),255)
+
+            # Dead code? Oh god I just realized the indentation is wrong
             greygradient = int2hex(min(int(255-lumi),255))
             textcolors = str(greygradient)+str(greygradient)+str(greygradient)
             returnvalue = str(int2hex(int(finaloutr)))+str(int2hex(int(finaloutg)))+str(int2hex(int(finaloutb)))
@@ -372,25 +132,24 @@ try:
     target_folder = sys.argv[1]
     target_folder = str(target_folder)
 except:
-    print("usage: put mods + modmapper.py + tes3conv.exe in same folder") 
+    print("usage: put mods + modmapper.py + tes3conv.exe in same folder")
     print("run: python modmapper.py \"target directory\"")
     print("output will be saved as index.html")
     sys.exit()
-
-if not os.path.isdir(target_folder):
+if not path.isdir(target_folder):
     print("FATAL: target directory \"",target_folder,"\"does not exist.")
     sys.exit()
 
-if not os.path.isfile("tes3conv.exe"):
-    print("FATAL: cannot find path to tes3conv.exe, is it in the same folder as this script?")
+if not which(tes3conv_binary) and not path.isfile(tes3conv_binary):
+    print(f"FATAL: cannot find tes3conv, is it in the same folder as this script?")
     sys.exit()
-    
-esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esm')]
-esplist += [each for each in os.listdir(target_folder) if each.lower().endswith('.esp')]
 
-# esplist += [filename for filename in listdir(target_folder) if filename.lower().rsplit('.')[2] in ["esp", "esm", "omwaddon"]]
+# Skip adding folders, backup files, anything with multiple extensions, and any invalid extensions like readme files.
+
+esplist = [each for each in listdir(target_folder) if each.lower().endswith('.esm') or each.lower().endswith('.esp') or each.lower().endswith('.omwaddon')]
+
 esplist = sorted(esplist, key=str.casefold)
-if overridetr:
+if conf.overridetr:
     if "TR_Update.ESP" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Update.ESP")))
     if "TR_Restexteriors.ESP" in esplist:
@@ -398,9 +157,9 @@ if overridetr:
     if "TR_Mainland.esm" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))   
+    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))
 if "Siege at Firemoth.esp" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth.esp")))    
+    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth.esp")))
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
@@ -408,14 +167,15 @@ if "Bloodmoon.esm" in esplist:
 if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
 
-
 for files in esplist:
-    if files not in excludelist:
-        colr = int2hex(randrange(minbrightness, maxbrightness))
-        colg = int2hex(randrange(minbrightness, maxbrightness))
-        colb = int2hex(randrange(minbrightness, maxbrightness))
-        if files in coloroverride:
-            hexcolors = (coloroverride[files])
+    if files not in conf.excludelist:
+        # Save for later to dedupe below
+        # colors = [randrange(conf.minbrightness, conf.maxbrightness) for _ in range(3)]
+        colr = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
+        colg = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
+        colb = int2hex(randrange(conf.minbrightness, conf.maxbrightness))
+        if files in conf.coloroverride:
+            hexcolors = (conf.coloroverride[files])
             colr = hexcolors[:2]
             colg = hexcolors[:-2]
             colg = colg[2:]
@@ -424,26 +184,26 @@ for files in esplist:
             basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
         tes3convversion = 0
         jsonfilename = files[:-4]+".json"
-        if deletemodjson and os.path.isfile(str(jsonfilename)):
-            os.remove(jsonfilename)
-        if not os.path.isfile(str(jsonfilename)):
+        if conf.deletemodjson and path.isfile(str(jsonfilename)):
+            remove(jsonfilename)
+        if not path.isfile(str(jsonfilename)):
             try:
-                target = "tes3conv.exe \""+str(files)+"\" \""+str(jsonfilename)+"\""
+                target = f"{tes3conv_binary} \""+str(files)+"\" \""+str(jsonfilename)+"\""
                 print("running",target)
-                os.system(target)
+                system(target)
             except Exception as e:
-                print("unable to convert mod to json: "+repr(e)) 
-        if not os.path.isfile(str(jsonfilename)):
+                print("unable to convert mod to json: "+repr(e))
+        if not path.isfile(str(jsonfilename)):
             failcounter+=1
             failedmodlist = failedmodlist + str(files) + " "
-        if os.path.isfile(str(jsonfilename)):
+        if path.isfile(str(jsonfilename)):
             f = io.open(jsonfilename, mode="r", encoding="utf-8")
             espfile_contents = f.read()
-            modfile_parsed_json = json.loads(espfile_contents) 
+            modfile_parsed_json = json.loads(espfile_contents)
             f.close()
             del espfile_contents
-            if deletemodjson:
-                os.remove(jsonfilename)
+            if conf.deletemodjson:
+                remove(jsonfilename)
             print("examining file",filecounter,"of",len(esplist),":",files)
             for keys in modfile_parsed_json:
                 extcellcounter = 0
@@ -478,7 +238,7 @@ for files in esplist:
                             modcelltable.append(keys["data"]["grid"])
                         if str(keys["data"]["grid"]) not in mastermoddict:
                             mastermoddict[str(keys["data"]["grid"])] = str(files)
-                            if moreinfo:
+                            if conf.moreinfo:
                                 print("new ext cell",str(keys["data"]["grid"]))
                         else:
                             modcelllist = mastermoddict[str(keys["data"]["grid"])]
@@ -495,7 +255,7 @@ for files in esplist:
                             intcellname = keys["name"]
                         if intcellname not in masterintdict:
                             masterintdict[intcellname] = str(files)
-                            if moreinfo:
+                            if conf.moreinfo:
                                 print("new int cell",intcellname)
                         else:
                             intcelllist = masterintdict[intcellname]
@@ -509,18 +269,17 @@ for files in esplist:
         excludecounter+=1
 
 print("Sorting through mods and assembling tables, this will take a while...")
-
-tablexmin = tablexmin - tableborder
-tablexmax = tablexmax + tableborder
-tableymin = tableymin - tableborder
-tableymax = tableymax + tableborder
+tablexmin = tablexmin - conf.tableborder
+tablexmax = tablexmax + conf.tableborder
+tableymin = tableymin - conf.tableborder
+tableymax = tableymax + conf.tableborder
 tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
 midvaluex = int(tablexmin+abs(tablewidth/2))
 midvaluey = int(tableymin+abs(tablelength/2))
 
-if moreinfo:
-    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
+if conf.moreinfo:
+    print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",conf.tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
 
 found = False
@@ -559,32 +318,33 @@ while tablerows < tablelength:
                 formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\" class="linkstuff">cell: <b>"""+str(values)+"""</b></a><BR>mods: """+str(modifyingmodlist)+"""</td></tr>\n"""
             if found:
                 break
-        paddingleft = ""
-        paddingright = ""
-        if abs(values[0]) < 100:
-            paddingleft = " "
-        if abs(values[0]) < 10:
-            paddingleft = "  "
-        if paddingleft and values[0] > -1:
-            paddingleft += " "
-        if abs(values[1]) < 100:
-            paddingright = "  "
-        if abs(values[1]) < 10:
-            paddingright = "   "
-        if paddingright and values[1] > -1:
-            paddingright += " "
-        cellx = str(int(tablecolumns-abs(tablexmin)))
-        celly = str(int(tablerows-abs(tableymin)))
-        if found:
-            docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
-            td.append("""<td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
-        else:
-            
-            td.append("""<td bgcolor=#"""+str(watercolor)+""" style=\"color:#"""+watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
-            if addemptycells:
-                formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL</td></tr>"""
-        found = False
-        tablecolumns+=1
+            paddingleft = ""
+            paddingright = ""
+            if abs(values[0]) < 100:
+                paddingleft = " "
+            if abs(values[0]) < 10:
+                paddingleft = "  "
+            if paddingleft and values[0] > -1:
+                paddingleft += " "
+            if abs(values[1]) < 100:
+                paddingright = "  "
+            if abs(values[1]) < 10:
+                paddingright = "   "
+            if paddingright and values[1] > -1:
+                paddingright += " "
+                cellx = str(int(tablecolumns-abs(tablexmin)))
+                celly = str(int(tablerows-abs(tableymin)))
+            if found:
+                docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
+                td.append("""<td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
+            else:
+                td.append("""<td bgcolor=#"""+str(conf.watercolor)+""" style=\"color:#"""+conf.watertextcolor+""";\"><div class="content"><a id=\"map["""+cellx+""", """+celly+"""]\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a></div></td>\n""")
+
+                # This variable *is* defined, but seeingly is complaining due to other factors
+                if conf.addemptycells:
+                    formattedextlist = formattedextlist + """<tr><td><a href=\"index.html#map["""+cellx+""", """+celly+"""]\" id=\"["""+cellx+""", """+celly+"""]\" class="linkstuff">cell: <b>["""+cellx+""", """+celly+"""]</b></a><BR>mods: EMPTY CELL</td></tr>"""
+            found = False
+            tablecolumns+=1
     table.append("\t\t"+"".join(td))
     table.append("""\t<tr>\n""")
     tablerows+=1
@@ -593,12 +353,12 @@ table.reverse()
 
 print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
-formattedintlist += intexttableopen
+formattedintlist += conf.intexttableopen
 
-masterintdict = dict(sorted(masterintdict.items())) 
+masterintdict = dict(sorted(masterintdict.items()))
 for items in masterintdict:
     formattedintlist += """<tr><span class="tooltiptext"><td>Cell: <b>"""+str(items)+"""</b><BR>Mods: """+str(masterintdict[items])+"""</td></span></tr>\n"""
-formattedintlist += intexttableclose 
+formattedintlist += conf.intexttableclose
 
 print("exporting HTML")
 
@@ -609,7 +369,7 @@ html_ext_body = ""
 html_allpage_navbar_start = """
 <nav class="nav">
 <div class="flex-container">
-<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
+<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(conf.version)+"""</a></h2>"""
 
 html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
 if excludecounter > 0:
@@ -632,24 +392,19 @@ html_allpage_navbar_end = """
 </nav>
 """
 
+navbarheader = html_body
 
-if splitpages:
-    # index page
-    html_body += html_allpage_navbar_start
-    html_body += html_mainpage_navbar_mid
-    html_body += html_allpage_navbar_end
-    html_body += html_body+"".join(table)
-    index_output = html_header+html_body+html_footer
-    # int page
-    html_int_body += html_allpage_navbar_start
-    html_int_body += html_intextpage_navbar_mid
-    html_int_body += html_allpage_navbar_end
+if conf.splitpages:
+    html_body = html_body+"".join(table)
+    index_output = conf.header+html_body+conf.footer
+
+    html_int_body = navbarheader
     i = 0
     while i < 6:
         html_int_body += """<br>"""
         i+=1
     html_int_body += formattedintlist
-    interior_output = html_header+html_int_body+html_footer
+    interior_output = conf.header+html_int_body+conf.footer
 
     html_ext_body += html_allpage_navbar_start
     html_ext_body += html_intextpage_navbar_mid
@@ -658,10 +413,10 @@ if splitpages:
     while i < 6:
         html_ext_body += """<br>"""
         i+=1
-    html_ext_body += intexttableopen
+    html_ext_body += conf.intexttableopen
     html_ext_body += formattedextlist
-    html_ext_body += intexttableclose
-    exterior_output = html_header+html_ext_body+html_footer
+    html_ext_body += conf.intexttableclose
+    exterior_output = conf.header+html_ext_body+conf.footer
     html_file= open("index.html","w")
     html_file.write(index_output)
     html_file.close()
@@ -675,10 +430,10 @@ else:
     html_body += "".join(table)
     html_body += formattedextlist
     html_body += formattedintlist
-    index_output = html_header+html_body+html_footer
-    html_file= open("index.html","w")
-    html_file.write(index_output)
-    html_file.close()
+    index_output = conf.header+html_body+conf.footer
+    Html_file= open("index.html","w")
+    Html_file.write(index_output)
+    Html_file.close()
 
 
 

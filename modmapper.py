@@ -26,7 +26,6 @@ from os import listdir, path, remove, system
 from random import randrange
 from datetime import datetime
 import static_config as conf
-import html_template as html
 
 basecolorhex = masterintdict = mastermoddict = {}
 intcelllist = modcelllist = failedmodlist = ""
@@ -335,12 +334,12 @@ table.reverse()
 
 print("generating interior list for "+str(len(masterintdict))+" interior cells.")
 formattedintlist = ""
-formattedintlist += html.intexttableopen
+formattedintlist += conf.intexttableopen
 
 masterintdict = dict(sorted(masterintdict.items()))
 for items in masterintdict:
     formattedintlist += """<tr><span class="tooltiptext"><td>Cell: <b>"""+str(items)+"""</b><BR>Mods: """+str(masterintdict[items])+"""</td></span></tr>\n"""
-formattedintlist += html.intexttableclose
+formattedintlist += conf.intexttableclose
 
 print("exporting HTML")
 
@@ -351,7 +350,7 @@ html_ext_body = ""
 html_allpage_navbar_start = """
 <nav class="nav">
 <div class="flex-container">
-<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
+<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(conf.version)+"""</a></h2>"""
 
 html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
 if excludecounter > 0:
@@ -378,7 +377,7 @@ navbarheader = html_body
 
 if conf.splitpages:
     html_body = html_body+"".join(table)
-    index_output = html.header+html_body+html.footer
+    index_output = conf.header+html_body+conf.footer
 
     html_int_body = navbarheader
     i = 0
@@ -386,7 +385,7 @@ if conf.splitpages:
         html_int_body += """<br>"""
         i+=1
     html_int_body += formattedintlist
-    interior_output = html.header+html_int_body+html.footer
+    interior_output = conf.header+html_int_body+conf.footer
 
     html_ext_body += html_allpage_navbar_start
     html_ext_body += html_intextpage_navbar_mid
@@ -395,10 +394,10 @@ if conf.splitpages:
     while i < 6:
         html_ext_body += """<br>"""
         i+=1
-    html_ext_body += html.intexttableopen
+    html_ext_body += conf.intexttableopen
     html_ext_body += formattedextlist
-    html_ext_body += html.intexttableclose
-    exterior_output = html.header+html_ext_body+html.footer
+    html_ext_body += conf.intexttableclose
+    exterior_output = conf.header+html_ext_body+conf.footer
     html_file= open("index.html","w")
     html_file.write(index_output)
     html_file.close()
@@ -412,7 +411,7 @@ else:
     html_body += "".join(table)
     html_body += formattedextlist
     html_body += formattedintlist
-    index_output = html.header+html_body+html.footer
+    index_output = conf.header+html_body+conf.footer
     Html_file= open("index.html","w")
     Html_file.write(index_output)
     Html_file.close()

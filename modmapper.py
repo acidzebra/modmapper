@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 # Modmapper for Morrowind
-# Modmapper for Morrowind
-version = "0.7b4"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -40,7 +38,6 @@ filecounter = 1
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
-# Somewhat unfamiliar with the `global` keyword but seems unnecessary in a monoscript
 global textcolors
 textcolors = "000000"
 
@@ -55,27 +52,15 @@ def int2hex(x):
 
 def calcoutputcellcolor(mymodcount,mymodlist):
     """
-    What the fuck is happening here oh my god
+    Determines the color of the table
     """
-    # Redeclaration ?
-    # global textcolors
-
-    # Bool determining if mod was found?
     foundmod = False
-    # Looks like a static color value
     returnvalue = "606060"
-
-    #Based ? Idk
     basevalue = 0
-
-    # Current mod being evaluated ?
     currentmod = ""
-
-    # Profit
     valuestep = conf.stepmodifier*(250/maxmodcellist)
 
     # On short load orders, conditionally increase the contrast of this cell (the literal cell represented by the cell in the table
-    # [I hate this terminology])
     if mymodcount <= conf.lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and conf.lowmodcountcontrastincrease:
         valuestep += 10
 
@@ -126,7 +111,7 @@ try:
     target_folder = sys.argv[1]
     target_folder = str(target_folder)
 except:
-    print("usage: put mods + modmapper.py + tes3conv.exe in same folder") 
+    print("usage: put mods + modmapper.py + tes3conv.exe in same folder")
     print("run: python modmapper.py \"target directory\"")
     print("output will be saved as index.html")
     sys.exit()
@@ -389,12 +374,13 @@ html_allpage_navbar_end = """
 </nav>
 """
 
+navbarheader = html_body
 
 if conf.splitpages:
     html_body = html_body+"".join(table)
     index_output = html.header+html_body+html.footer
 
-    html_int_body = html.navbarheader
+    html_int_body = navbarheader
     i = 0
     while i < 6:
         html_int_body += """<br>"""

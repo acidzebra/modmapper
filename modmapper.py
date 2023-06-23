@@ -23,6 +23,7 @@ import io
 import json
 import sys
 from os import listdir, path, remove, system
+from platform import system as user_os
 from random import randrange
 from datetime import datetime
 import static_config as conf
@@ -37,8 +38,30 @@ filecounter = 1
 interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
+tes3conv_binary = "tes3conv" + (".exe" if user_os == "Windows" else '')
+
 global textcolors
 textcolors = "000000"
+
+def which(program):
+    """
+    Function to determine where the program is in the system, if anywhere.
+    """
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, _ = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 def int2hex(x):
     """
@@ -118,17 +141,14 @@ if not path.isdir(target_folder):
     print("FATAL: target directory \"",target_folder,"\"does not exist.")
     sys.exit()
 
-if not path.isfile("tes3conv.exe"):
-    print("FATAL: cannot find path to tes3conv.exe, is it in the same folder as this script?")
+if not which(tes3conv_binary) and not path.isfile(tes3conv_binary):
+    print(f"FATAL: cannot find tes3conv, is it in the same folder as this script?")
     sys.exit()
 
-# esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esm')]
-# I'm kind skeptical about this but we'll have to test it at runtime, fam
-try:
-    esplist += [filename for filename in listdir(target_folder) if filename.lower().rsplit('.')[1] in ["esp", "esm", "omwaddon"]]
-except KeyError as badKey:
-    print("Bad key at " + badKey)
-# esplist += [each for each in listdir(target_folder) if each.lower().endswith('.esp') or each.lower().endswith('.esm')]
+# Skip adding folders, backup files, anything with multiple extensions, and any invalid extensions like readme files.
+
+esplist = [each for each in listdir(target_folder) if each.lower().endswith('.esm') or each.lower().endswith('.esp') or each.lower().endswith('.omwaddon')]
+
 esplist = sorted(esplist, key=str.casefold)
 if conf.overridetr:
     if "TR_Update.ESP" in esplist:
@@ -169,7 +189,7 @@ for files in esplist:
             remove(jsonfilename)
         if not path.isfile(str(jsonfilename)):
             try:
-                target = "tes3conv.exe \""+str(files)+"\" \""+str(jsonfilename)+"\""
+                target = f"{tes3conv_binary} \""+str(files)+"\" \""+str(jsonfilename)+"\""
                 print("running",target)
                 system(target)
             except Exception as e:

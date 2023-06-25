@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.7"
+version = "0.8b1"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -253,9 +253,9 @@ td a {
 
 .intexttable a {
   display: inline;
-  font-weight: normal;
+  font-weight: bold;
   background-color: #101010;
-  color: #808080;
+  color: #a0a0a0;
 }
 
 .intexttable td:hover {
@@ -282,7 +282,7 @@ html_footer = """
 
 intexttableopen = """
 
-    <table class="intexttable">
+    <table id="bigtable" class="intexttable">
     """
 
 intexttableclose = """
@@ -292,7 +292,7 @@ function intextsearch() {
   var input, filter, table, tr, td, i, txtValue;
   input = document.getElementById("intextinput");
   filter = input.value.toUpperCase();
-  table = document.getElementById("intexttable");
+  table = document.getElementById("bigtable");
   tr = table.getElementsByTagName("tr");
   for (i = 0; i < tr.length; i++) {
     td = tr[i].getElementsByTagName("td")[0];
@@ -323,7 +323,7 @@ excludecounter = 0
 failcounter = 0
 failedmodlist = ""
 modcelllist = ""
-intcelllist = ""
+intcelllist = []
 maxmodcellist = 0
 tes3convversion = 0
 interiorcell = False
@@ -507,27 +507,35 @@ for files in esplist:
                                 maxmodcellist = modcelllistcounter
                             mastermoddict[str(keys["data"]["grid"])] = modcelllist
                     else:
-                        intcellname = ""
+                        intcellname = None
                         if tes3convversion == 0:
                             intcellname = keys["id"]
                         else:
                             intcellname = keys["name"]
-                        if intcellname not in masterintdict:
-                            masterintdict[intcellname] = str(files)
-                            if moreinfo:
-                                print("new int cell",intcellname)
-                        else:
-                            intcelllist = masterintdict[intcellname]
-                            intcelllist = intcelllist + ", " + files
-                            masterintdict[intcellname] = intcelllist
+                        #intcellname.replace(",", ".")
+                        #intcellname = ''.join(e for e in string if e.isalnum())
+                        intcellname = ''.join(filter(str.isalnum, intcellname)) 
+                        if intcellname:
+                            if intcellname not in masterintdict.keys():
+                                masterintdict[str(intcellname)] = str(files)
+                                if moreinfo:
+                                    print("new int cell",intcellname)
+                            else:
+                                tempvalue = ""
+                                tempvalue = masterintdict[intcellname]
+                                tempvalue = tempvalue + ", " + files
+                                #masterintdict.update({intcellname: tempvalue})
+                                masterintdict[str(intcellname)] = tempvalue
                     interiorcell = False
+                    intappendlist = None
+                    intcelllist = []
         filecounter+=1
     else:
         print("skipping file",filecounter,"of",len(esplist),":",files,"(excludelist)")
         filecounter+=1
         excludecounter+=1
 
-print("Sorting through mods and assembling tables, this will take a while...")
+print("Sorting through mods and assembling and linking tables, this will take a while...")
 
 tablexmin = tablexmin - tableborder
 tablexmax = tablexmax + tableborder
@@ -581,6 +589,7 @@ while tablerows < tablelength:
                 nexusmodlink = ""
                 extcelldatamodlist = ""
                 nexusmodslink = ""
+                # THIS SHOULD BE A FUNCTION
                 # take the list of mod affecting cell, go through them 1 by 1
                 for bunchofmods in modifyingmodlist:
                     foundthemod= False
@@ -590,7 +599,7 @@ while tablerows < tablelength:
                         listofzipmods = myzipdict[allthezips]
                         #go through each individual mod and try to match to the outer loop mod we started with
                         for individualmods in listofzipmods:
-                            # I DON'T KNOW ANYMORE IF ONE OF THESE THINGS MATCHES THE OTHER ITS FINE. I SAID ITS FINE.
+                            # I DON'T KNOW ANYMORE. IF ANY ONE OF THESE THINGS MATCHES THE OTHER ITS FINE. I SAID ITS FINE.
                             if bunchofmods in individualmods or bunchofmods in listofzipmods or individualmods in bunchofmods:
                                 foundthemod = True
                                 nexusmodslink = None
@@ -608,7 +617,6 @@ while tablerows < tablelength:
                     if foundthemod and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
                         extcelldatamodlist += """<a class=\"extlink\" href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a>, """
                     else:
-                        #print("unable to find",bunchofmods)
                         extcelldatamodlist += str(bunchofmods)+""", """
                     foundthemod=False
                     nexusmodslink=""
@@ -618,7 +626,7 @@ while tablerows < tablelength:
                 else:
                     tooltipdisplaymodlist = modifyingmodlist
                 tooltipdata = """cell: <b>"""+str(values)+"""</b> ("""+str(modcount)+""" mods)<BR>mods: """+str(tooltipdisplaymodlist)
-                formattedextlist += """<tr><td><a class=\"extlink\" href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\">cell: <b>"""+str(values)+"""</b></a> ("""+str(modcount)+""" mods)<BR>mods: """+str(extcelldatamodlist)+"""</td></tr>\n"""
+                formattedextlist += """<tr><td><br><a class=\"extlink\" href=\"index.html#map"""+str(values)+"""\" id=\""""+str(values)+"""\">cell: <b>"""+str(values)+"""</b></a> ("""+str(modcount)+""" mods)<BR>mods: """+str(extcelldatamodlist)+"""</td></tr>\n"""
             if foundmycell:
                 break
         paddingleft = ""
@@ -637,7 +645,7 @@ while tablerows < tablelength:
             paddingright += " "
         cellx = str(int(tablecolumns-abs(tablexmin)))
         celly = str(int(tablerows-abs(tableymin)))
-        if found:
+        if foundmycell:
             docellcolor = calcoutputcellcolor(modcount,modifyingmodlist)
             td.append("""<td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\"><div class="content"><div class="tooltip"><a href=\"modmapper_exteriors.html#"""+str(values)+"""\" id=\"map"""+str(values)+"""\" style=\"color: #"""+textcolors+""";text-decoration:none;\">"""+str(paddingleft)+"["+cellx+""",<BR>"""+celly+"]"+str(paddingright)+"""</a><span class="tooltiptext">"""+tooltipdata+"""</span></div></div></td>\n""")
         else:
@@ -652,51 +660,58 @@ while tablerows < tablelength:
 table.append("""<table>\n""")
 table.reverse()
 
-print("generating interior list for "+str(len(masterintdict))+" interior cells.")
+
 formattedintlist = ""
 formattedintlist += intexttableopen
 
 masterintdict = dict(sorted(masterintdict.items())) 
+
+intcounter = 1
+cyclecounter = 1
+totalints= len(masterintdict)
+print("generating and linking interior list for "+str(totalints)+" interior cells.")
 for items in masterintdict:
+    if cyclecounter > 249:
+        print(intcounter,"of",totalints)
+        cyclecounter = 1
+    else:
+        cyclecounter += 1
     modcount = str(masterintdict[items])
     modcount = len(modcount.split(","))
-    
-
-    # for bunchofmods in modifyingmodlist:
-        # foundthezip = False
-        # foundthemod= False
-        # #now take zipfiles in the zipdict and go through them one by one
-        # for allthezips in myzipdict:
-            # # get the list of mods in the current zipfile
-            # listofzipmods = myzipdict[allthezips]
-            # #go through each individual mod
-            # foundthemod = False
-            # for individualmods in listofzipmods:
-                # #print("does",individualmods,"match",bunchofmods")
-                # if bunchofmods in individualmods:
-                    # #print("the mod",bunchofmods,"was found in",allthezips)
-                    # if allthezips in mylinkdict.keys():
-                        # #print("nexusmodlink is", mylinkdict[allthezips])
-                        # #print("nexusmodlink is ", mylinkdict[findmod])
-                        # nexusmodlink = mylinkdict[allthezips]
-                        # nexusmodlink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
-                        # #print(nexusmodlink)
-                        # extcelldatamodlist += """<a href=\""""+str(nexusmodlink)+"""\">"""+str(bunchofmods)+"""</a>, """
-                        # foundthemod = True
-                # else:
-                        # extcelldatamodlist += str(bunchofmods)+""", """
-                        # foundthemod = True
-                # if foundthemod:
-                    # break
-            # if foundthemod:
-                # foundthemod= False
-                # break
-
-
-
-
-
-    formattedintlist += """<tr><td>Cell: <b>"""+str(items)+"""</b> ("""+str(modcount)+""" mods)<BR>Mods: """+str(masterintdict[items])+"""</td></tr>\n"""
+    modifyingmodlist = []
+    modifyingmodlist.append(masterintdict[items])
+    intcelldata = ""
+    # THIS SHOULD BE A FUNCTION
+    # take the list of mod affecting cell, go through them 1 by 1
+    for bunchofmods in modifyingmodlist:
+        foundthemod= False
+        #now take zipfiles in the zipdict and go through them one by one
+        for allthezips in myzipdict:
+            # get the list of mods in the current zipfile
+            listofzipmods = myzipdict[allthezips]
+            #go through each individual mod and try to match to the outer loop mod we started with
+            for individualmods in listofzipmods:
+                # I DON'T KNOW ANYMORE. IF ANY ONE OF THESE THINGS MATCHES THE OTHER ITS FINE. I SAID ITS FINE.
+                if str(bunchofmods) in individualmods or str(bunchofmods) in listofzipmods or individualmods in str(bunchofmods):
+                    foundthemod = True
+                    nexusmodslink = None
+                    try:
+                        nexusmodlink = mylinkdict[allthezips]
+                        nexusmodlink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
+                        if moreinfo:
+                            print("nexus link for",bunchofmods,"is",nexusmodlink,"zip file",allthezips)
+                    except:
+                        foundthemod = False
+                if foundthemod:
+                    break
+            if foundthemod:
+                break
+        if foundthemod:
+            intcelldata += """<a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a> """
+        else:
+            intcelldata += str(bunchofmods)+""" """
+    formattedintlist += """<tr><td><br>Cell: <b>"""+str(items)+"""</b> ("""+str(modcount)+""" mods)<BR>Mods: """+str(intcelldata)+"""</td></tr>\n"""
+    intcounter += 1
 formattedintlist += intexttableclose 
 
 print("exporting HTML")

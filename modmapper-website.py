@@ -679,7 +679,13 @@ for items in masterintdict:
     modcount = str(masterintdict[items])
     modcount = len(modcount.split(","))
     modifyingmodlist = []
-    modifyingmodlist.append(masterintdict[items])
+    modifyingmodlist = str(masterintdict[str(items)]).split(",")
+    dedupe_modlist = []
+    for item in modifyingmodlist:
+        if item not in dedupe_modlist:
+            dedupe_modlist.append(item)
+    modifyingmodlist = []
+    modifyingmodlist = dedupe_modlist
     intcelldata = ""
     # THIS SHOULD BE A FUNCTION
     # take the list of mod affecting cell, go through them 1 by 1

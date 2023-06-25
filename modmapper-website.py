@@ -512,9 +512,9 @@ for files in esplist:
                             intcellname = keys["id"]
                         else:
                             intcellname = keys["name"]
-                        #intcellname.replace(",", ".")
+                        intcellname.replace(",", ".")
                         #intcellname = ''.join(e for e in string if e.isalnum())
-                        intcellname = ''.join(filter(str.isalnum, intcellname)) 
+                        #intcellname = ''.join(filter(str.isalnum, intcellname)) 
                         if intcellname:
                             if intcellname not in masterintdict.keys():
                                 masterintdict[str(intcellname)] = str(files)
@@ -550,7 +550,9 @@ if moreinfo:
     print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
 
-found = False
+foundmycell = False
+foundthemod = False
+
 lookup = []
 table = []
 table.append("""</table>""")
@@ -588,7 +590,6 @@ while tablerows < tablelength:
                 limittooltiplimit = 30
                 nexusmodlink = ""
                 extcelldatamodlist = ""
-                nexusmodslink = ""
                 # THIS SHOULD BE A FUNCTION
                 # take the list of mod affecting cell, go through them 1 by 1
                 for bunchofmods in modifyingmodlist:
@@ -600,7 +601,7 @@ while tablerows < tablelength:
                         #go through each individual mod and try to match to the outer loop mod we started with
                         for individualmods in listofzipmods:
                             # I DON'T KNOW ANYMORE. IF ANY ONE OF THESE THINGS MATCHES THE OTHER ITS FINE. I SAID ITS FINE.
-                            if bunchofmods in individualmods or bunchofmods in listofzipmods or individualmods in bunchofmods:
+                            if bunchofmods in individualmods or bunchofmods in listofzipmods or individualmods in bunchofmods and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
                                 foundthemod = True
                                 nexusmodslink = None
                                 try:
@@ -614,7 +615,7 @@ while tablerows < tablelength:
                                 break
                         if foundthemod:
                             break
-                    if foundthemod and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
+                    if foundthemod:
                         extcelldatamodlist += """<a class=\"extlink\" href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a>, """
                     else:
                         extcelldatamodlist += str(bunchofmods)+""", """
@@ -678,18 +679,18 @@ for items in masterintdict:
         cyclecounter += 1
     modcount = str(masterintdict[items])
     modcount = len(modcount.split(","))
-    modifyingmodlist = []
-    modifyingmodlist = str(masterintdict[str(items)]).split(",")
-    dedupe_modlist = []
-    for item in modifyingmodlist:
-        if item not in dedupe_modlist:
-            dedupe_modlist.append(item)
-    modifyingmodlist = []
-    modifyingmodlist = dedupe_modlist
+    intmodifyingmodlist = []
+    intmodifyingmodlist = str(masterintdict[str(items)]).split(",")
+    intdedupe_modlist = []
+    for item in intmodifyingmodlist:
+        if item not in intdedupe_modlist:
+            intdedupe_modlist.append(item)
+    intmodifyingmodlist = []
+    intmodifyingmodlist = intdedupe_modlist
     intcelldata = ""
     # THIS SHOULD BE A FUNCTION
     # take the list of mod affecting cell, go through them 1 by 1
-    for bunchofmods in modifyingmodlist:
+    for bunchofmods in intmodifyingmodlist:
         foundthemod= False
         #now take zipfiles in the zipdict and go through them one by one
         for allthezips in myzipdict:
@@ -712,6 +713,7 @@ for items in masterintdict:
                     break
             if foundthemod:
                 break
+        bunchofmods.replace(".", ",")
         if foundthemod:
             intcelldata += """<a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a> """
         else:

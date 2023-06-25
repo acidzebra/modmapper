@@ -1,3 +1,9 @@
+Not really a user-facing/friendly set of tools, I'm using this to generate the website.
+
+It has some extra tricks like limited tooltips and links up nexusmods if you generate a dict with modidentifier.py WHICH YOU CANNOT RUN WITHOUT EDITING. It's pretty much tailored to my setup.
+Useful features might be backported to the main branch.
+
+
 # modmapper
 
 DEMO: https://acidzebra.github.io/modmapper/ - currently tracks 2000+ mods and the changes they make to exterior and interior cells.

@@ -2,28 +2,50 @@
 # patool is kind of weird, on my windows box it finds and uses nanazip which is a 7zip fork. I don't know how it found it, and I don't care.
 
 
-
+# FOLDERS/PATHS
 # where the archives you want this program to look at are
 zipfiles_folder = "D:\\Downloads\\zips"
 # where unpacked mods you want to match against the archives are
 modmappermods_folder = "E:\\testmods"
 # working directory where stuff can be unzipped, WILL BE DELETED
-temp_dir = "E:\\modextract_temp"
+temp_dir = "D:\\modextract_temp"
+
+# FILE MOVING
+# set to true to enable modidentifier to move stuff around, you need to set the paths as well
+filemovingok = True
 # any non-nexus mods will be moved here
 movefolder = "E:\\notnexus"
 #mods without esp files (MWSE stuff, textures, mesh replacers) will be moved here
 esplessmodmovefolder = "E:\\notnexus"
+
+# ESP COPYING
+# if set to true, will copy any esp/esm/omwaddons found to the designated folder.
+espcopyok = True
 # esp/esm/owmaddon files will be moved here
 espmovefolder = "E:\\testmods"
+
+# ESP (PARTIAL) NAME FILTERING
+# do you want to filter out (partial) names in esps?
+nocopyfilterenable = True
 # esps with filenames (partially) matching the below will be skipped
 nocopylist = ["grass","groundcover","aes","vurt","rem_"]
-# don't point to nexus for TR indev
-trexcludelist = ["TR_Islands","TR_LakeAndaram","TR_OthEast","TR_Restexteriors","TR_Sundered_Scar","TR_ShipalShin","TR_Restexteriors","TR_Dra-Vashai"]
-trexcludeurl = "https://www.tamriel-rebuilt.org/releasefiles"
+
+# ESP BLOCKLISTING
+# blocklist files?
+blocklistenable = True
 # esps that I don't want on the map for whatever reason (in the cases below, they add cells VERY far from the center of the map)
-espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp"]
+espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp","EEC Expansion.ESP","patch"]
 # I didn't read anything and just ran the file
 noreadcheck = True
+
+# ESP FILENAME CHARACTER REPLACEMENT
+# replace some characters?
+characterreplace = True
+# replace these characters in names:
+replacecharlist = [",","@","-"]
+# with this:
+replacecharwith = "_"
+
 
 ########################################
 # imports and vars
@@ -56,13 +78,15 @@ copyfaillist = []
 movedcounter = 0
 copyfailcounter = 0
 noesp = False
-replacecharlist = [",","@","-"]
-replacecharwith = "_"
 namesreplaced = 0
 namereplacelist = []
 blockedfiles = 0
 blockedfilelist = []
+# don't point to nexus for TR indev stuff
+trexcludelist = ["TR_Islands","TR_LakeAndaram","TR_OthEast","TR_Restexteriors","TR_Sundered_Scar","TR_ShipalShin","TR_Restexteriors","TR_Dra-Vashai"]
+trexcludeurl = "https://www.tamriel-rebuilt.org/releasefiles"
 
+# find files based on starting path, returns path/to/filename.ext
 def findfile(name, path):
     for root, dirs, files in os.walk(path):
         if name in files:
@@ -76,15 +100,17 @@ ziplist += [each for each in os.listdir(zipfiles_folder) if (each.lower().endswi
 modmappermodlist = []
 modmappermodlist += [each for each in os.listdir(modmappermods_folder) if (each.lower().endswith('.esm') or each.lower().endswith('.esp') or each.lower().endswith('.omwaddon'))]
 if noreadcheck:
+    print("YOU MUST EDIT THE PATHS AND OTHER VALUES IN THIS FILE BEFORE USING IT")
+    print("once that is done, set noreadcheck to False")
     sys.exit()
 counter = 1
 tempdirtemplate = temp_dir
 filecounter = 1
 totalfiles = len(ziplist)
-# loop through collected archives
 
+# loop through collected archives
 for zipfiles in ziplist:
-    print("file",filecounter,"of",totalfiles,". unknown:",unknowncounter,"brokenarchive:",failcounter,"noesp:",noespcounter,"copyfail:",copyfailcounter,"blocklisted:",blockedfiles,"renamed:",namesreplaced)
+    print("file",filecounter,"of",totalfiles,"is",zipfiles,"LOGS: unknown:",unknowncounter,"brokenarchive:",failcounter,"noesp:",noespcounter,"copyfail:",copyfailcounter,"blocklisted:",blockedfiles,"renamed:",namesreplaced)
     filecounter+=1
     # does the temp folder exist? NUKE IT
     if os.path.isdir(temp_dir):
@@ -93,8 +119,9 @@ for zipfiles in ziplist:
         except OSError as e:
             print("Error: %s - %s." % (e.filename, e.strerror))
             problem = True
-    # WHY THIS NONSENSE BELOW? Some people packed their mods complete with file ownership and perms in the archive. Can patool extract without those? Maybe, I don't know? Can I write code to reset perms on both windows and linux? It's tricky but maybe? Will cost
-    #time though. Or I could just say fuck it, add a number at the end to create a new folder, and clean up manually after. I count 11 files out of ~2700 which have some kind of issue like that so it's pretty rare.
+    # WHY THIS NONSENSE BELOW? Some people packed their mods complete with file ownership and perms in the archive. Can patool extract without those? Maybe, I don't know? 
+    # Can I write code to reset perms on both windows and linux? It's tricky but maybe? Will cost ime though. Or I could just say fuck it, add a number at the end to create a new folder, and clean up manually after.
+    # I count 11 files out of ~2700 which have some kind of issue like that so it's pretty rare.
     if problem:
         temp_dir = tempdirtemplate + str(counter)
         counter += 1
@@ -129,27 +156,33 @@ for zipfiles in ziplist:
                 if (espesmomw.lower().endswith('.esm') or espesmomw.lower().endswith('.esp') or espesmomw.lower().endswith('.omwaddon')):
                     espesmomwoutputfile = espesmomw
                     espblock = False
-                    for blockthesefiles in espblocklist:
-                        # WHY IS THIS ALWAYS ANNOYING? ONE OF THESE WORKS I'M SURE. FUCK IT.
-                        if blockthesefiles in espesmomw or espesmomw in blockthesefiles or str(espesmomw).lower() == str(blockthesefiles).lower():
-                            blockedfiles += 1
-                            blockedfilelist.append(espesmomw)
-                            print("blocklisted:",espesmomw)
-                            espblock = True
-                    for replacers in replacecharlist:
-                        if replacers in espesmomw:
-                            espesmomwoutputfile = espesmomwoutputfile.replace(replacers,"_")
-                            print("name replace",espesmomw,"with",blockthesefiles)
-                            namesreplaced += 1
-                            namereplacelist.append(blockthesefiles)
+                    if blocklistenable:
+                        for blockthesefiles in espblocklist:
+                            # WHY IS THIS ALWAYS ANNOYING? ONE OF THESE WORKS I'M SURE. FUCK IT.
+                            if blockthesefiles in espesmomw or espesmomw in blockthesefiles or str(espesmomw).lower() == str(blockthesefiles).lower():
+                                blockedfiles += 1
+                                blockedfilelist.append(espesmomw)
+                                print("ESP BLOCKLIST:",espesmomw)
+                                espblock = True
+                    if characterreplace:
+                        for replacers in replacecharlist:
+                            if replacers in espesmomw:
+                                espesmomwoutputfile = espesmomwoutputfile.replace(replacers,"_")
+                                print("name replace",espesmomw,"with",blockthesefiles)
+                                namesreplaced += 1
+                                namereplacelist.append(blockthesefiles)
                     copytargetesp = findfile(espesmomw, temp_dir)
                     foldertargetesp = espmovefolder+"\\"+espesmomwoutputfile
                     #print(copytargetesp,"to",foldertargetesp)
                     goaheadcopy = True
-                    for dontcopyme in nocopylist:
-                        if dontcopyme.lower() in espesmomw.lower():
-                            goaheadcopy = False
-                    if goaheadcopy and not espblock:
+                    if nocopyfilterenable:
+                        for dontcopyme in nocopylist:
+                            if dontcopyme.lower() in espesmomw.lower() or str(dontcopyme.lower()) == (espesmomw.lower()):
+                                print("ESP FILTER:",espesmomw)
+                                blockedfiles += 1
+                                blockedfilelist.append(espesmomw)
+                                goaheadcopy = False
+                    if goaheadcopy and not espblock and espcopyok:
                         try:
                             shutil.copyfile(copytargetesp, foldertargetesp)
                         except:
@@ -161,8 +194,6 @@ for zipfiles in ziplist:
             print("noesp",zipfiles)
             noespcounter += 1
             noesplist.append(zipfiles)
-            #shutil.copyfile(zipfiles_folder+"\\"+unzippedesp, dst)
-        #espdict.update({zipfiles:esplist})
         espdict[zipfiles]=esplist
         print(zipfiles,"contained ",esplist)
         nexusmodlink = ""
@@ -176,8 +207,11 @@ for zipfiles in ziplist:
                 trexcludeflag = True
         if not trexcludeflag:
             try:
+                # some failed regex experiments
                 # nexusmodlink = re.findall('-.*?-', zipfiles)
                 # nexusmodlink = int(nexusmodlink[0][1:-1])
+                #
+                # this still isn't ideal, I should check first if the digits are enclosed by -,
                 test = re.findall('[^0-9]+([0-9]+)', zipfiles)
                 foundlink = False
                 # so the nexusmodID in the filename is a great idea, but nothing stops mod authors from adding any amount of numbers to their file. Like "3E421, a story", or "housemod v1.233781".
@@ -188,7 +222,7 @@ for zipfiles in ziplist:
                     if not foundlink:
                         for items in test:
                             if len(items) == loops:
-                                print("match",items)
+                                #print("match",items)
                                 foundlink = True
                             if foundlink:
                                 break
@@ -199,19 +233,14 @@ for zipfiles in ziplist:
                     nexusmodlink = int(items)
             except:
                 pass
-            # try:
-                # nexusmodlink2 = re.findall('-.*?\.', zipfiles)
-                # nexusmodlink2 = int(nexusmodlink2[0][1:-1])
-            # except:
-                # pass
         found = False
         if nexusmodlink and not found and not trexcludeflag:
-            print("nexus ID is hopefully https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink))
+            print("nexus ID is https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
             found = True
             mynexuslink = nexusmodlink
         if nexusmodlink2 and not found and not trexcludeflag:
-            print("nexus ID is hopefully https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2))
+            print("nexus ID is https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2)
             found = True
         if trexcludeflag:
@@ -219,26 +248,28 @@ for zipfiles in ziplist:
             found = True
         if found:
             nexusmodname = re.findall('.*?-', zipfiles)
-            #print("suggested name:",nexusmodname[0][:-1])
             nexuslinkdict.update({zipfiles:mynexuslink})
-        moved = False
-        if not found and not moved:
-            unknownlist.append(zipfiles)
-            unknowncounter += 1
-            moved = True
-            print("not a nexus mod")
-            try:
-                shutil.move(zipfiles_folder+"\\"+zipfiles, movefolder+"\\"+zipfiles)
-            except:
-                pass
-        if noesp and not moved:
-            print("no esp found")
-            moved = True
-            try:
-                shutil.move(zipfiles_folder+"\\"+zipfiles, esplessmodmovefolder+"\\"+zipfiles)
-            except:
-                pass
-        moved = False
+        if filemovingok:
+            moved = False
+            # if it's not recognised as a nexus mod, move it
+            if not found and not moved:
+                unknownlist.append(zipfiles)
+                unknowncounter += 1
+                moved = True
+                print(zipfiles," is not a nexus mod")
+                try:
+                    shutil.move(zipfiles_folder+"\\"+zipfiles, movefolder+"\\"+zipfiles)
+                except:
+                    pass
+            # if it's a nexus mod but has no esp, move it
+            if noesp and not moved:
+                print("no esp found")
+                moved = True
+                try:
+                    shutil.move(zipfiles_folder+"\\"+zipfiles, esplessmodmovefolder+"\\"+zipfiles)
+                except:
+                    pass
+            moved = False
         esplist = []
         noesp = False
     # remove temp folder
@@ -252,51 +283,38 @@ for zipfiles in ziplist:
 
 ############# that concludes the dict building.
 
-########## dumb debug stuff
-# print("---- dictionary:")
-# print(espdict)
-# print("---- nexus:")
-# print(nexuslinkdict)
-print(counter,"files had problems, enjoy cleaning up")
-currentmodname = "TR_Mainland.esm"
-# print("---------")
-# print("going to look for",currentmodname)
-#########################
-#print(espdict)
-
 ###### example of a lookup
+# currentmodname = "TR_Mainland.esm"
 
-# testing
-print("testing dict against:",currentmodname)
-for allthezips in espdict:
-    listofzipmods = espdict[allthezips]
-    for individualmods in listofzipmods:
-        if currentmodname in individualmods:
-            print("the mod",currentmodname,"was found in",allthezips)
-            if allthezips in nexuslinkdict.keys():
-                print("nexusmodlink is", nexuslinkdict[allthezips])
-# if currentmodname in espdict.values():
-    # print("YAY")
-    # findmod = list(espdict.keys())[list(espdict.values()).index(currentmodname)]
-    # print("the mod",currentmodname,"was found in",findmod)
-    # if findmod in nexuslinkdict.keys():
-        # print("YAYx2")
-        # print("nexusmodlink is ", nexuslinkdict[findmod])
-    # else:
-        # print("I have no link for this :(")
-        
-        
+# print("testing dict against:", currentmodname)
+# for allthezips in espdict:
+    # listofzipmods = espdict[allthezips]
+    # foundthemod = False
+    # for individualmods in listofzipmods:
+        # if currentmodname in individualmods:
+            # print("the mod",currentmodname,"was found in",allthezips)
+            # if allthezips in nexuslinkdict.keys():
+                # print("nexusmodlink is", nexuslinkdict[allthezips])
+                # foundthemod = true
+        # if foundthemod:
+            # break
+    # if foundthemod:
+        # break
+
+print("writing zip dict")
 zipdict = open("zipdict.txt","w")
 espdump = json.dumps(espdict)
 zipdict.write(str(espdump))
 zipdict.close()
-
+print("writing link dict")
 linkdict = open("linkdict.txt","w")
 nexusdump = json.dumps(nexuslinkdict)
 linkdict.write(str(nexuslinkdict))
 linkdict.close()
-
+print("REPORT:")
 print("noesp:", noesplist)
 print("failed:",failedlist)
 print("unkown:",unknownlist)
 print("copy fail:",copyfaillist)
+print("renamed:",namereplacelist)
+print("blocked:",blockedfilelist)

@@ -4,7 +4,7 @@
 
 # FOLDERS/PATHS
 # where the archives you want this program to look at are
-zipfiles_folder = "D:\\Downloads\\zips"
+zipfiles_folder = "D:\\Downloads\\mwmodzips"
 # where unpacked mods you want to match against the archives are
 modmappermods_folder = "E:\\testmods"
 # working directory where stuff can be unzipped, WILL BE DELETED
@@ -14,21 +14,23 @@ temp_dir = "D:\\modextract_temp"
 # set to true to enable modidentifier to move stuff around, you need to set the paths as well
 filemovingok = True
 # any non-nexus mods will be moved here
-movefolder = "E:\\notnexus"
+movefolder = "D:\\Downloads\\mwmodnotnexus"
 #mods without esp files (MWSE stuff, textures, mesh replacers) will be moved here
-esplessmodmovefolder = "E:\\notnexus"
+esplessmodmovefolder = "D:\\Downloads\\mwmodnoesp"
 
 # ESP COPYING
 # if set to true, will copy any esp/esm/omwaddons found to the designated folder.
 espcopyok = True
 # esp/esm/owmaddon files will be moved here
 espmovefolder = "E:\\testmods"
+# overwrite if already exists?
+espoverwrite = False
 
 # ESP (PARTIAL) NAME FILTERING
 # do you want to filter out (partial) names in esps?
 nocopyfilterenable = True
 # esps with filenames (partially) matching the below will be skipped
-nocopylist = ["grass","groundcover","aes","vurt","rem_"]
+nocopylist = ["grass","groundcover","aes","vurt","rem_","(RU)"]
 
 # ESP BLOCKLISTING
 # blocklist files?
@@ -36,7 +38,7 @@ blocklistenable = True
 # esps that I don't want on the map for whatever reason (in the cases below, they add cells VERY far from the center of the map)
 espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp","EEC Expansion.ESP","patch"]
 # I didn't read anything and just ran the file
-noreadcheck = True
+noreadcheck = False
 
 # ESP FILENAME CHARACTER REPLACEMENT
 # replace some characters?
@@ -167,10 +169,10 @@ for zipfiles in ziplist:
                     if characterreplace:
                         for replacers in replacecharlist:
                             if replacers in espesmomw:
-                                espesmomwoutputfile = espesmomwoutputfile.replace(replacers,"_")
+                                espesmomwoutputfile = espesmomwoutputfile.replace(str(replacers),str(replacecharwith))
                                 print("name replace",espesmomw,"with",blockthesefiles)
                                 namesreplaced += 1
-                                namereplacelist.append(blockthesefiles)
+                                namereplacelist.append(espesmomw)
                     copytargetesp = findfile(espesmomw, temp_dir)
                     foldertargetesp = espmovefolder+"\\"+espesmomwoutputfile
                     #print(copytargetesp,"to",foldertargetesp)
@@ -182,12 +184,18 @@ for zipfiles in ziplist:
                                 blockedfiles += 1
                                 blockedfilelist.append(espesmomw)
                                 goaheadcopy = False
-                    if goaheadcopy and not espblock and espcopyok:
-                        try:
-                            shutil.copyfile(copytargetesp, foldertargetesp)
-                        except:
-                            copyfailcounter += 1
-                            copyfaillist.append(espesmomwoutputfile)
+                    espexistsalready = os.path.exists(foldertargetesp)
+                    appendedfile = False
+                    if espoverwrite or not espexistsalready:
+                        if goaheadcopy and not espblock and espcopyok:
+                            try:
+                                shutil.copyfile(copytargetesp, foldertargetesp)
+                            except:
+                                copyfailcounter += 1
+                                copyfaillist.append(espesmomwoutputfile)
+                            esplist.append(espesmomwoutputfile)
+                            appendedfile = True
+                    if not appendedfile:
                         esplist.append(espesmomwoutputfile)
         if not esplist:
             noesp = True

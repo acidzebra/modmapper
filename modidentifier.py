@@ -23,6 +23,8 @@ modmappermods_folder = "E:\\testmods"
 temp_dir = "E:\\modextract_temp"
 # any non-nexus mods will be moved here
 movefolder = "E:\\notnexus"
+# esp/esm/owmaddon files will be moved here
+espmovefolder = "E:\\testmods"
 
 path = os.getcwd()
 esplist = []
@@ -38,8 +40,22 @@ failcounter = 0
 failedremove = 0
 noespcounter = 0
 noesplist = []
+copyfaillist = []
 movedcounter = 0
+copyfailcounter = 0
 noesp = False
+nocopylist = ["grass","groundcover","aes","vurt"]
+replacecharlist = [",","@","-"]
+replacecharwith = "_"
+
+# don't point to nexus for TR indev
+trexcludelist = ["TR_Islands","TR_LakeAndaram","TR_OthEast","TR_Restexteriors","TR_Sundered_Scar"]
+trexcludeurl = "https://www.tamriel-rebuilt.org/releasefiles"
+
+# esps that I don't want on the map for whatever reason (in the cases below, they add cells VERY far from the center of the map)
+espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp"]
+blockedfiles = 0
+blockedfilelist = []
 # create list of zips
 ziplist = []
 ziplist += [each for each in os.listdir(zipfiles_folder) if (each.lower().endswith('.zip') or each.lower().endswith('.rar') or each.lower().endswith('.7z'))]
@@ -48,13 +64,22 @@ ziplist += [each for each in os.listdir(zipfiles_folder) if (each.lower().endswi
 modmappermodlist = []
 modmappermodlist += [each for each in os.listdir(modmappermods_folder) if (each.lower().endswith('.esm') or each.lower().endswith('.esp') or each.lower().endswith('.omwaddon'))]
 
+def findfile(name, path):
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
+            
 counter = 1
 tempdirtemplate = temp_dir
 filecounter = 1
 totalfiles = len(ziplist)
 # loop through collected archives
+
+
+                            
+                            
 for zipfiles in ziplist:
-    print("file",filecounter,"of",totalfiles,". unknown:",unknowncounter,"brokenarchive:",failcounter,"noesp:",noespcounter)
+    print("file",filecounter,"of",totalfiles,". unknown:",unknowncounter,"brokenarchive:",failcounter,"noesp:",noespcounter,"copyfail:",copyfailcounter,"blocklisted:",blockedfiles)
     filecounter+=1
     # does the temp folder exist? NUKE IT
     if os.path.isdir(temp_dir):
@@ -97,12 +122,38 @@ for zipfiles in ziplist:
         for folder, subfolders, files in os.walk(temp_dir):
             for espesmomw in files:
                 if (espesmomw.lower().endswith('.esm') or espesmomw.lower().endswith('.esp') or espesmomw.lower().endswith('.omwaddon')):
-                    esplist.append(espesmomw)
+                    espesmomwoutputfile = espesmomw
+                    espblock = False
+                    for blockthesefiles in espblocklist:
+                        if blockthesefiles in espesmomw:
+                            blockedfiles += 1
+                            blockedfilelist.append(espesmomw)
+                            print("blocklisted:",espesmomw)
+                            espblock = True
+                    for replacers in replacecharlist:
+                        if replacers in espesmomw:
+                            espesmomwoutputfile = espesmomwoutputfile.replace(replacers,"_")
+                            print("name replace",espesmomw,"with",espesmomwoutputfile)
+                    copytargetesp = findfile(espesmomw, temp_dir)
+                    foldertargetesp = espmovefolder+"\\"+espesmomwoutputfile
+                    #print(copytargetesp,"to",foldertargetesp)
+                    goaheadcopy = True
+                    for dontcopyme in nocopylist:
+                        if dontcopyme in espesmomw:
+                            goaheadcopy = False
+                    if goaheadcopy and not espblock:
+                        try:
+                            shutil.copyfile(copytargetesp, foldertargetesp)
+                        except:
+                            copyfailcounter += 1
+                            copyfaillist.append(espesmomwoutputfile)
+                        esplist.append(espesmomwoutputfile)
         if not esplist:
             noesp = True
             print("noesp",zipfiles)
             noespcounter += 1
             noesplist.append(zipfiles)
+            #shutil.copyfile(zipfiles_folder+"\\"+unzippedesp, dst)
         #espdict.update({zipfiles:esplist})
         espdict[zipfiles]=esplist
         print(zipfiles,"contained ",esplist)
@@ -110,6 +161,11 @@ for zipfiles in ziplist:
         nexusmodlink2 = ""
         nexusmodname = ""
         mynexuslink = ""
+        trexcludeflag = False
+        for items in trexcludelist:
+            if items in zipfiles:
+                nexusmodlink = trexcludeurl
+                trexcludeflag = True
         try:
             # nexusmodlink = re.findall('-.*?-', zipfiles)
             # nexusmodlink = int(nexusmodlink[0][1:-1])
@@ -140,14 +196,17 @@ for zipfiles in ziplist:
         # except:
             # pass
         found = False
-        if nexusmodlink and not found:
+        if nexusmodlink and not found and not trexcludeflag:
             print("nexus ID is hopefully https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
             found = True
             mynexuslink = nexusmodlink
-        if nexusmodlink2 and not found:
+        if nexusmodlink2 and not found and not trexcludeflag:
             print("nexus ID is hopefully https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2)
+            found = True
+        if trexcludeflag:
+            mynexuslink = trexcludeurl
             found = True
         if found:
             nexusmodname = re.findall('.*?-', zipfiles)
@@ -231,3 +290,4 @@ linkdict.close()
 print("noesp:", noesplist)
 print("failed:",failedlist)
 print("unkown:",unknownlist)
+print("copy fail:",copyfaillist)

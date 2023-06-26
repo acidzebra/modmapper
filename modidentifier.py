@@ -166,35 +166,36 @@ for zipfiles in ziplist:
             if items in zipfiles:
                 nexusmodlink = trexcludeurl
                 trexcludeflag = True
-        try:
-            # nexusmodlink = re.findall('-.*?-', zipfiles)
-            # nexusmodlink = int(nexusmodlink[0][1:-1])
-            test = re.findall('[^0-9]+([0-9]+)', zipfiles)
-            foundlink = False
-            # so the nexusmodID in the filename is a great idea, but nothing stops mod authors from adding any amount of numbers to their file. Like "3E421, a story", or "housemod v1.233781".
-            # plus when dealing with old games like MW and poking around in old mods, you're going to come across short numbers for the nexusmodsID.
-            # anyway we're testing for xxxxx, then xxxx, then xxx number sequences in order.
-            loops = 5
-            while loops > 2:
+        if not trexcludeflag:
+            try:
+                # nexusmodlink = re.findall('-.*?-', zipfiles)
+                # nexusmodlink = int(nexusmodlink[0][1:-1])
+                test = re.findall('[^0-9]+([0-9]+)', zipfiles)
+                foundlink = False
+                # so the nexusmodID in the filename is a great idea, but nothing stops mod authors from adding any amount of numbers to their file. Like "3E421, a story", or "housemod v1.233781".
+                # plus when dealing with old games like MW and poking around in old mods, you're going to come across short numbers for the nexusmodsID.
+                # anyway we're testing for xxxxx, then xxxx, then xxx number sequences in order.
+                loops = 5
+                while loops > 2:
+                    if not foundlink:
+                        for items in test:
+                            if len(items) == loops:
+                                print("match",items)
+                                foundlink = True
+                            if foundlink:
+                                break
+                    loops = loops-1
                 if not foundlink:
-                    for items in test:
-                        if len(items) == loops:
-                            print("match",items)
-                            foundlink = True
-                        if foundlink:
-                            break
-                loops = loops-1
-            if not foundlink:
-                items = ""
-            if foundlink:
-                nexusmodlink = int(items)
-        except:
-            pass
-        # try:
-            # nexusmodlink2 = re.findall('-.*?\.', zipfiles)
-            # nexusmodlink2 = int(nexusmodlink2[0][1:-1])
-        # except:
-            # pass
+                    items = ""
+                if foundlink:
+                    nexusmodlink = int(items)
+            except:
+                pass
+            # try:
+                # nexusmodlink2 = re.findall('-.*?\.', zipfiles)
+                # nexusmodlink2 = int(nexusmodlink2[0][1:-1])
+            # except:
+                # pass
         found = False
         if nexusmodlink and not found and not trexcludeflag:
             print("nexus ID is hopefully https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink))

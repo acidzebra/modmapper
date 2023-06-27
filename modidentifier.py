@@ -36,7 +36,7 @@ nocopylist = ["grass","groundcover","aes","vurt","rem_","(RU)"]
 # blocklist files?
 blocklistenable = True
 # esps that I don't want on the map for whatever reason (in the cases below, they add cells VERY far from the center of the map)
-espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp","EEC Expansion.ESP","patch"]
+espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp","EEC Expansion.ESP","patch","PrivateersHold.esp"]
 # I didn't read anything and just ran the file
 noreadcheck = False
 
@@ -49,6 +49,7 @@ replacecharlist = [",","@","-"]
 replacecharwith = "_"
 
 
+
 ########################################
 # imports and vars
 import patoolib
@@ -57,6 +58,7 @@ import io
 import sys
 import os
 import re
+import ast
 import shutil
 import subprocess
 from os import listdir
@@ -87,6 +89,12 @@ blockedfilelist = []
 # don't point to nexus for TR indev stuff
 trexcludelist = ["TR_Islands","TR_LakeAndaram","TR_OthEast","TR_Restexteriors","TR_Sundered_Scar","TR_ShipalShin","TR_Restexteriors","TR_Dra-Vashai"]
 trexcludeurl = "https://www.tamriel-rebuilt.org/releasefiles"
+
+# LOAD EXTERNAL SITE DICT?
+with open('nonnexusdict.txt') as f:
+    data = f.read()
+myexternalsitedict = ast.literal_eval(data)
+externaloverridedict = {}
 
 # find files based on starting path, returns path/to/filename.ext
 def findfile(name, path):
@@ -155,9 +163,15 @@ for zipfiles in ziplist:
     if not problem:
         for folder, subfolders, files in os.walk(temp_dir):
             for espesmomw in files:
+                externaloverrideurl = ""
+                # why check against vanilla files? BECAUSE SOME IDIOTS PACK THEM IN THE ARCHIVES
                 if (espesmomw.lower().endswith('.esm') or espesmomw.lower().endswith('.esp') or espesmomw.lower().endswith('.omwaddon')):
                     espesmomwoutputfile = espesmomw
                     espblock = False
+                    for items in myexternalsitedict:
+                        if str(espesmomw).lower() in str(items).lower() or str(items).lower() in str(espesmomw).lower() or str(items).lower() == str(espesmomw).lower():
+                            externaloverrideurl = myexternalsitedict[items]
+                            externaloverridedict[zipfiles] = externaloverrideurl
                     if blocklistenable:
                         for blockthesefiles in espblocklist:
                             # WHY IS THIS ALWAYS ANNOYING? ONE OF THESE WORKS I'M SURE. FUCK IT.
@@ -170,7 +184,7 @@ for zipfiles in ziplist:
                         for replacers in replacecharlist:
                             if replacers in espesmomw:
                                 espesmomwoutputfile = espesmomwoutputfile.replace(str(replacers),str(replacecharwith))
-                                print("name replace",espesmomw,"with",blockthesefiles)
+                                print("name replace",espesmomw,"with",espesmomwoutputfile)
                                 namesreplaced += 1
                                 namereplacelist.append(espesmomw)
                     copytargetesp = findfile(espesmomw, temp_dir)
@@ -199,7 +213,7 @@ for zipfiles in ziplist:
                         esplist.append(espesmomwoutputfile)
         if not esplist:
             noesp = True
-            print("noesp",zipfiles)
+            print("NO ESP:",zipfiles)
             noespcounter += 1
             noesplist.append(zipfiles)
         espdict[zipfiles]=esplist
@@ -210,10 +224,21 @@ for zipfiles in ziplist:
         mynexuslink = ""
         trexcludeflag = False
         for items in trexcludelist:
-            if items in zipfiles:
+            if str(items).lower() in str(zipfiles).lower() or str(zipfiles).lower() in str(items).lower():
                 nexusmodlink = trexcludeurl
                 trexcludeflag = True
-        if not trexcludeflag:
+            if trexcludeflag:
+                break
+        externaloverride = False        
+        for items in externaloverridedict:
+            #print(items)
+            if str(items).lower() in str(zipfiles).lower() or str(zipfiles).lower() in str(items).lower():
+                nexusmodlink = externaloverridedict[items]
+                print("EXTERNAL OVERRIDE FOUND FOR",zipfiles,"link is",nexusmodlink)
+                externaloverride = True
+            if externaloverride:
+                break
+        if not trexcludeflag and not externaloverride:
             try:
                 # some failed regex experiments
                 # nexusmodlink = re.findall('-.*?-', zipfiles)
@@ -242,18 +267,21 @@ for zipfiles in ziplist:
             except:
                 pass
         found = False
-        if nexusmodlink and not found and not trexcludeflag:
+        if nexusmodlink and not found and not trexcludeflag and not externaloverride:
             print("nexus ID is https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
             found = True
             mynexuslink = nexusmodlink
-        if nexusmodlink2 and not found and not trexcludeflag:
+        if nexusmodlink2 and not found and not trexcludeflag and not externaloverride:
             print("nexus ID is https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2)
             found = True
         if trexcludeflag:
-            mynexuslink = trexcludeurl
             found = True
+            print("TR content (non-release), URL is "+str(nexusmodlink))
+        if externaloverride:
+            found = True
+            print("Non-Nexus content, found in reference list, URL is "+str(nexusmodlink))
         if found:
             nexusmodname = re.findall('.*?-', zipfiles)
             nexuslinkdict.update({zipfiles:mynexuslink})
@@ -280,6 +308,9 @@ for zipfiles in ziplist:
             moved = False
         esplist = []
         noesp = False
+        externaloverride = False
+        trexcludeflag = False
+        
     # remove temp folder
     try:
         shutil.rmtree(temp_dir)
@@ -320,9 +351,10 @@ nexusdump = json.dumps(nexuslinkdict)
 linkdict.write(str(nexuslinkdict))
 linkdict.close()
 print("REPORT:")
+print("blocked:",blockedfilelist)
+print("renamed:",namereplacelist)
 print("noesp:", noesplist)
 print("failed:",failedlist)
 print("unkown:",unknownlist)
 print("copy fail:",copyfaillist)
-print("renamed:",namereplacelist)
-print("blocked:",blockedfilelist)
+

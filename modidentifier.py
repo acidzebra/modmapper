@@ -6,7 +6,7 @@
 # where the archives you want this program to look at are
 zipfiles_folder = "D:\\Downloads\\mwmodzips"
 # where unpacked mods you want to match against the archives are
-modmappermods_folder = "E:\\testmods"
+modmappermods_folder = "D:\\testmods"
 # working directory where stuff can be unzipped, WILL BE DELETED
 temp_dir = "D:\\modextract_temp"
 
@@ -18,11 +18,11 @@ movefolder = "D:\\Downloads\\mwmodnotnexus"
 #mods without esp files (MWSE stuff, textures, mesh replacers) will be moved here
 esplessmodmovefolder = "D:\\Downloads\\mwmodnoesp"
 
-# ESP COPYING
+# ESP COPYINGF
 # if set to true, will copy any esp/esm/omwaddons found to the designated folder.
 espcopyok = True
 # esp/esm/owmaddon files will be moved here
-espmovefolder = "E:\\testmods"
+espmovefolder = "D:\\testmods"
 # overwrite if already exists?
 espoverwrite = False
 
@@ -35,8 +35,9 @@ nocopylist = ["grass","groundcover","aes","vurt","rem_","(RU)"]
 # ESP BLOCKLISTING
 # blocklist files?
 blocklistenable = True
-# esps that I don't want on the map for whatever reason (in the cases below, they add cells VERY far from the center of the map)
-espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp","EEC Expansion.ESP","patch","PrivateersHold.esp"]
+# esps that I don't want on the map for whatever reason (in the cases below, they add cells VERY far from the center of the map or are old and crusty or patches)
+espblocklist = ["Doom_Door_01.esp","C0N2 v1.01.esp","EEC Expansion.ESP","patch","PrivateersHold.esp","TR_OldTravels.ESP","TR_Preview.ESP","TR_travel.esp","TR_Travels.ESP",
+"TR_Travels_(Preview_and_Mainland).ESP"]
 # I didn't read anything and just ran the file
 noreadcheck = False
 
@@ -77,6 +78,7 @@ failedlist = []
 failcounter = 0
 failedremove = 0
 noespcounter = 0
+copycounter = 0
 noesplist = []
 copyfaillist = []
 movedcounter = 0
@@ -87,7 +89,7 @@ namereplacelist = []
 blockedfiles = 0
 blockedfilelist = []
 # don't point to nexus for TR indev stuff
-trexcludelist = ["TR_Islands","TR_LakeAndaram","TR_OthEast","TR_Restexteriors","TR_Sundered_Scar","TR_ShipalShin","TR_Restexteriors","TR_Dra-Vashai"]
+trexcludelist = ["TR_Islands","TR_LakeAndaram","TR_OthEast","TR_Restexteriors","TR_Sund","TR_Shipal","TR_Restexteriors","TR_Dra"]
 trexcludeurl = "https://www.tamriel-rebuilt.org/releasefiles"
 
 # LOAD EXTERNAL SITE DICT?
@@ -120,7 +122,7 @@ totalfiles = len(ziplist)
 
 # loop through collected archives
 for zipfiles in ziplist:
-    print("file",filecounter,"of",totalfiles,"is",zipfiles,"LOGS: unknown:",unknowncounter,"brokenarchive:",failcounter,"noesp:",noespcounter,"copyfail:",copyfailcounter,"blocklisted:",blockedfiles,"renamed:",namesreplaced)
+    print("file",filecounter,"of",totalfiles,"is",zipfiles,"LOGS: unknown:",unknowncounter,"brokenarchive:",failcounter,"noesp:",noespcounter,"copied",copycounter,"copyfail:",copyfailcounter,"blocklisted:",blockedfiles,"renamed:",namesreplaced)
     filecounter+=1
     # does the temp folder exist? NUKE IT
     if os.path.isdir(temp_dir):
@@ -208,6 +210,7 @@ for zipfiles in ziplist:
                                 copyfailcounter += 1
                                 copyfaillist.append(espesmomwoutputfile)
                             esplist.append(espesmomwoutputfile)
+                            copycounter += 1
                             appendedfile = True
                     if not appendedfile:
                         esplist.append(espesmomwoutputfile)
@@ -225,7 +228,7 @@ for zipfiles in ziplist:
         trexcludeflag = False
         for items in trexcludelist:
             if str(items).lower() in str(zipfiles).lower() or str(zipfiles).lower() in str(items).lower():
-                nexusmodlink = trexcludeurl
+                mynexuslink = trexcludeurl
                 trexcludeflag = True
             if trexcludeflag:
                 break
@@ -233,8 +236,8 @@ for zipfiles in ziplist:
         for items in externaloverridedict:
             #print(items)
             if str(items).lower() in str(zipfiles).lower() or str(zipfiles).lower() in str(items).lower():
-                nexusmodlink = externaloverridedict[items]
-                print("EXTERNAL OVERRIDE FOUND FOR",zipfiles,"link is",nexusmodlink)
+                mynexuslink = externaloverridedict[items]
+                print("EXTERNAL OVERRIDE FOUND FOR",zipfiles,"link is",mynexuslink)
                 externaloverride = True
             if externaloverride:
                 break
@@ -271,17 +274,16 @@ for zipfiles in ziplist:
             print("nexus ID is https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
             found = True
-            mynexuslink = nexusmodlink
         if nexusmodlink2 and not found and not trexcludeflag and not externaloverride:
             print("nexus ID is https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2))
             mynexuslink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink2)
             found = True
         if trexcludeflag:
             found = True
-            print("TR content (non-release), URL is "+str(nexusmodlink))
+            print("TR content (non-release), URL is "+str(mynexuslink))
         if externaloverride:
             found = True
-            print("Non-Nexus content, found in reference list, URL is "+str(nexusmodlink))
+            print("Non-Nexus content, found in reference list, URL is "+str(mynexuslink))
         if found:
             nexusmodname = re.findall('.*?-', zipfiles)
             nexuslinkdict.update({zipfiles:mynexuslink})
@@ -356,5 +358,6 @@ print("renamed:",namereplacelist)
 print("noesp:", noesplist)
 print("failed:",failedlist)
 print("unkown:",unknownlist)
+print("copied:",copycounter)
 print("copy fail:",copyfaillist)
 

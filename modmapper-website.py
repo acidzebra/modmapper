@@ -1,5 +1,5 @@
 # Modmapper for Morrowind
-version = "0.8b1"
+version = "0.8b3"
 #
 # examines all mods in a folder and builds a HTML file with a map showing and linking to exterior cell details, specifically which mods modify that cell.
 # additionally provides list of interior cells with a list of mods modifying them.
@@ -16,6 +16,7 @@ version = "0.8b1"
 # 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
 # 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work
 # 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages, some css/presentation cleanup, better cell coloration function (more saturation, less trend to white)
+# 0.8 - uhhh, bunch of stuff?
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -51,8 +52,14 @@ watercolor = "2B65EC"
 watertextcolor = "1010ff"
 # add empty cells to the exterior cell list. This will make that list VERY long and the program VERY slow.
 addemptycells = False
+
+# higlighted mods, put mod(s) here that you want "on top" of the map; their cell color will override whatever other mods normally get loaded first (normal = first original game, TR stuff, then rest of the content in alphabetical order). E.g. you can highlight a mod on the main continent with this, which normally would be a shade of green.You may also want to set a specific color override below.
+highlightmodlist = []
+
+
 # color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
 coloroverride = {}
+coloroverride.update({"Beautiful cities of Morrowind.ESP":"002010"})
 coloroverride.update({"Morrowind.esm":"002000"})
 coloroverride.update({"TR_Mainland.esm":"000040"})
 coloroverride.update({"TR_Restexteriors.ESP":"400000"})
@@ -60,8 +67,9 @@ coloroverride.update({"Bloodmoon.esm":"003030"})
 coloroverride.update({"Solstheim Tomb of The Snow Prince.esm":"300030"})
 coloroverride.update({"Cyr_Main.esm":"909000"})
 coloroverride.update({"Sky_Main.esm":"001060"})
-# the default name of the exported file (THIS SWITCH DOES NOTHING CURRENTLY)
+# the default name of the exported file
 exportfilename = "index.html"
+
 # ---  
         
 import json
@@ -83,7 +91,9 @@ with open('linkdict.txt') as f:
     data = f.read()
 mylinkdict = ast.literal_eval(data)
 
-
+with open('nonnexusdict.txt') as f:
+    data = f.read()
+myexternalsitedict = ast.literal_eval(data)
 
 
 
@@ -106,25 +116,25 @@ body {
 
 a.linkstuff {
   color: #a0a0a0; !important;
-  font-weight: bold;
+  font-weight: normal;
   text-decoration: normal;
 }
 
 a.linkstuff:visited {
   color: #a0a0a0; !important;
-  font-weight: bold;
+  font-weight: normal;
   text-decoration: normal;
 }
 
 a.linkstuff:hover {
   color: #c0c0c0; !important;
-  font-weight: bold;
+  font-weight: normal;
   text-decoration: normal;
 }
 
 a.linkstuff:active {
   color: #b0b0b0; !important;
-  font-weight: bold;
+  font-weight: normal;
   text-decoration: normal;
 }
 
@@ -138,9 +148,8 @@ a:visited {
 }
 a:hover {
   background-color: #909090;
-  font-weight: bold;
   text-decoration: none;
-  color: ff0000;
+  color: #ff0000;
 }
 a:active {
   color: #909090;
@@ -149,6 +158,7 @@ a:active {
 
 table {
   width: 100%;
+  margin-top: 80px;
   border: none;
   border-spacing:0;
   border-collapse: collapse;
@@ -163,7 +173,7 @@ td .content {
 
 td:hover {
   background-color: #909090;
-  font-weight: bold;
+  font-weight: normal;
   color: #ff0000;
 }
 td a {
@@ -241,19 +251,18 @@ td a {
 
 .intexttable {
   width: 100%;
-  border: 1px solid #a0a0a0;
+  border: none;
   margin-bottom: 12px;
-  display: inline;
+  margin-top: 80px;
   margin-left: auto;
   margin-right: auto;
-  display: inline;
-  width: 100%;
+  font-size: 80%;
   border-collapse: separate;
 }
 
 .intexttable a {
   display: inline;
-  font-weight: bold;
+  font-weight: normal;
   background-color: #101010;
   color: #a0a0a0;
 }
@@ -265,7 +274,39 @@ td a {
 }
 
 .intexttable a:hover {
-  font-weight: bold;
+  font-weight: normal;
+  background-color: #101010;
+  color: #ffff00;
+}
+
+.modtable {
+  width: 100%;
+  border: none;
+  margin-bottom: 12px;
+  margin-top: 80px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 80%;
+}
+
+.modtable a {
+  display: inline;
+  font-weight: normal;
+}
+
+.modtable td:hover {
+  font-weight: normal;
+  
+}
+
+.modtable td:hover {
+  font-weight: normal;
+  background-color: #101010;
+  color: #808080;
+}
+
+.modtable a:hover {
+  font-weight: normal;
   background-color: #101010;
   color: #ffff00;
 }
@@ -281,10 +322,11 @@ html_footer = """
 """
 
 intexttableopen = """
-
     <table id="bigtable" class="intexttable">
     """
-
+modtableopen = """
+    <table id="bigtable" class="modtable">
+    """
 intexttableclose = """
 </table>
 <script>
@@ -305,6 +347,32 @@ function intextsearch() {
       }
     }       
   }
+}
+</script>
+"""
+
+modtableclose = """
+</table>
+<script>
+function intextsearch() {
+    var input, filter, table, tr, td, i, txtValue;
+    input = document.getElementById("intextinput");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("bigtable");
+    tr = table.getElementsByTagName("tr");
+    for (i = 0; i < tr.length; i++) {
+        var allTDs = tr[i].getElementsByTagName("td");
+
+        for (index = 0; index < allTDs.length; index++) {
+            txtValue = allTDs[index].textContent || allTDs[index].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                break;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
 }
 </script>
 """
@@ -330,8 +398,12 @@ interiorcell = False
 generationdate = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 global textcolors
 textcolors = "000000"
-
-
+mostfaroutmodxmin = ""
+mostfaroutmodxmax = ""
+mostfaroutmodymin = ""
+mostfaroutmodymax = ""
+authordict = {}
+descdict = {}
 def int2hex(x):
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
@@ -349,6 +421,7 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
         currentmod = items
+        foundmod = False
         if not foundmod and currentmod in basecolorhex:
             foundmod = True
             hexcolors = (basecolorhex[currentmod])
@@ -409,9 +482,11 @@ esplist += [each for each in os.listdir(target_folder) if (each.lower().endswith
 
 # esplist += [filename for filename in listdir(target_folder) if filename.lower().rsplit('.')[2] in ["esp", "esm", "omwaddon"]]
 esplist = sorted(esplist, key=str.casefold)
+if "Cyr_Main.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Cyr_Main.esm")))
+if "Sky_Main.esm" in esplist:
+    esplist.insert(0, esplist.pop(esplist.index("Sky_Main.esm"))) 
 if overridetr:
-    if "TR_Update.ESP" in esplist:
-        esplist.insert(0, esplist.pop(esplist.index("TR_Update.ESP")))
     if "TR_Restexteriors.ESP" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Restexteriors.ESP")))
     if "TR_Mainland.esm" in esplist:
@@ -419,15 +494,23 @@ if overridetr:
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))   
 if "Siege at Firemoth.esp" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth.esp")))    
+    esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth.esp")))  
 if "Tribunal.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Tribunal.esm")))
 if "Bloodmoon.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Bloodmoon.esm")))
 if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
-
-
+for items in highlightmodlist:
+    for stuff in esplist:
+        if str(items).casefold() == str(stuff).casefold():
+            esplist.insert(0, esplist.pop(esplist.index(stuff)))
+            print("popped",stuff)
+authordict = {}
+descdict = {}
+masterdict = {}
+objectdict = {}
+finalesplist = []
 for files in esplist:
     if files not in excludelist:
         colr = int2hex(randrange(minbrightness, maxbrightness))
@@ -456,6 +539,7 @@ for files in esplist:
             failcounter+=1
             failedmodlist = failedmodlist + str(files) + " "
         if os.path.isfile(str(jsonfilename)):
+            finalesplist.append(files)
             f = io.open(jsonfilename, mode="r", encoding="utf-8")
             espfile_contents = f.read()
             modfile_parsed_json = json.loads(espfile_contents) 
@@ -466,6 +550,20 @@ for files in esplist:
             print("examining file",filecounter,"of",len(esplist),":",files)
             for keys in modfile_parsed_json:
                 extcellcounter = 0
+                if keys["type"] == "Header":
+                    if len(keys["author"])>0:
+                        authordict[files] = str(keys["author"])
+                    else:
+                        authordict[files] = "N/A"
+                    if len(keys["description"])>0:
+                        descdict[files] = str(keys["description"])
+                    else:
+                        descdict[files] = "N/A"
+                    if len(keys["masters"])>0:
+                        masterdict[files] = str(keys["masters"])
+                    else:    
+                        masterdict[files] = "N/A"
+                    objectdict[files] = str(keys["num_objects"])
                 if keys["type"] == "Cell" and len(keys["references"])>0:
                     extcellcounter += 1
                     tes3convversioncheck = 0
@@ -486,13 +584,16 @@ for files in esplist:
                     if not interiorcell:
                         if keys["data"]["grid"][0] < tablexmin:
                             tablexmin = keys["data"]["grid"][0]
+                            mostfaroutmodxmin = files
                         if keys["data"]["grid"][0] > tablexmax:
                             tablexmax = keys["data"]["grid"][0]
+                            mostfaroutmodxmax = files
                         if keys["data"]["grid"][1] < tableymin:
                             tableymin = keys["data"]["grid"][1]
+                            mostfaroutmodymin = files
                         if keys["data"]["grid"][1] > tableymax:
                             tableymax = keys["data"]["grid"][1]
-# TODO: fix up this list/dict mess, I started using one and switched to the other, then ended up using both. Shitshow. A working shitshow but still.
+                            mostfaroutmodymax = files
                         if keys["data"]["grid"] not in modcelltable:
                             modcelltable.append(keys["data"]["grid"])
                         if str(keys["data"]["grid"]) not in mastermoddict:
@@ -513,8 +614,6 @@ for files in esplist:
                         else:
                             intcellname = keys["name"]
                         intcellname.replace(",", ".")
-                        #intcellname = ''.join(e for e in string if e.isalnum())
-                        #intcellname = ''.join(filter(str.isalnum, intcellname)) 
                         if intcellname:
                             if intcellname not in masterintdict.keys():
                                 masterintdict[str(intcellname)] = str(files)
@@ -524,7 +623,6 @@ for files in esplist:
                                 tempvalue = ""
                                 tempvalue = masterintdict[intcellname]
                                 tempvalue = tempvalue + ", " + files
-                                #masterintdict.update({intcellname: tempvalue})
                                 masterintdict[str(intcellname)] = tempvalue
                     interiorcell = False
                     intappendlist = None
@@ -536,7 +634,7 @@ for files in esplist:
         excludecounter+=1
 
 print("Sorting through mods and assembling and linking tables, this will take a while...")
-
+print("topmost:",mostfaroutmodymax,"bottommost:",mostfaroutmodymin,"leftmost:",mostfaroutmodxmin,"rightmost:",mostfaroutmodxmax)
 tablexmin = tablexmin - tableborder
 tablexmax = tablexmax + tableborder
 tableymin = tableymin - tableborder
@@ -545,7 +643,7 @@ tablewidth = int(abs(tablexmax)+abs(tablexmin)+1)
 tablelength = int(abs(tableymax)+abs(tableymin)+1)
 midvaluex = int(tablexmin+abs(tablewidth/2))
 midvaluey = int(tableymin+abs(tablelength/2))
-
+totalcells = tablewidth * tablelength
 if moreinfo:
     print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
     print("calculated table width",tablewidth,"calculated table length",tablelength)
@@ -562,7 +660,7 @@ tablecolumns = 0
 tooltipdata = ""
 formattedextlist = ""
 while tablerows < tablelength:
-    print("Assembling map row",tablerows,"of",(tablelength-1),"(",(tablewidth-1),"columns/cells per row)")
+    print("Assembling map row",tablerows,"of",(tablelength-1),"(",(tablewidth-1),"columns/cells per row). topmost:",mostfaroutmodymax,"bottommost:",mostfaroutmodymin,"leftmost:",mostfaroutmodxmin,"rightmost:",mostfaroutmodxmax )
     table.append("""\n\t</tr>\n""")
     td = []
     tablecolumns = 0
@@ -587,9 +685,11 @@ while tablerows < tablelength:
                 modifyingmodlist = dedupe_modlist
                 tooltipdisplaymodlist = []
                 limittooltip = True
-                limittooltiplimit = 30
+                limittooltiplimit = 15
                 nexusmodlink = ""
                 extcelldatamodlist = ""
+                extcelldatamodlistfound = ""
+                extcelldatamodlistnotfound = ""
                 # THIS SHOULD BE A FUNCTION
                 # take the list of mod affecting cell, go through them 1 by 1
                 for bunchofmods in modifyingmodlist:
@@ -600,13 +700,12 @@ while tablerows < tablelength:
                         listofzipmods = myzipdict[allthezips]
                         #go through each individual mod and try to match to the outer loop mod we started with
                         for individualmods in listofzipmods:
-                            # I DON'T KNOW ANYMORE. IF ANY ONE OF THESE THINGS MATCHES THE OTHER ITS FINE. I SAID ITS FINE.
-                            if bunchofmods in individualmods or bunchofmods in listofzipmods or individualmods in bunchofmods and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
+                            if str(bunchofmods).lower() in str(individualmods).lower() or str(individualmods).lower() in str(bunchofmods).lower() and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
                                 foundthemod = True
                                 nexusmodslink = None
                                 try:
                                     nexusmodlink = mylinkdict[allthezips]
-                                    nexusmodlink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
+
                                     if moreinfo:
                                         print("nexus link for",bunchofmods,"is",nexusmodlink,"zip file",allthezips)
                                 except:
@@ -616,11 +715,14 @@ while tablerows < tablelength:
                         if foundthemod:
                             break
                     if foundthemod:
-                        extcelldatamodlist += """<a class=\"extlink\" href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a>, """
+                        extcelldatamodlistfound += """<a class=\"extlink\" href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a>, """
                     else:
-                        extcelldatamodlist += str(bunchofmods)+""", """
+                        extcelldatamodlistnotfound += str(bunchofmods)+""", """
                     foundthemod=False
                     nexusmodslink=""
+                extcelldatamodlist += extcelldatamodlistfound
+                extcelldatamodlist += extcelldatamodlistnotfound
+                
                 if limittooltip and modcount > limittooltiplimit:
                     tooltipdisplaymodlist = modifyingmodlist[:limittooltiplimit]
                     tooltipdisplaymodlist.append(" <br>(tooltip limited to "+str(limittooltiplimit)+" of "+str(modcount)+" mods, click cell to see all)")
@@ -672,8 +774,8 @@ cyclecounter = 1
 totalints= len(masterintdict)
 print("generating and linking interior list for "+str(totalints)+" interior cells.")
 for items in masterintdict:
-    if cyclecounter > 249:
-        print(intcounter,"of",totalints)
+    if cyclecounter > 499:
+        print(str(intcounter),"of",str(totalints),"interiors, currently at",str(items))
         cyclecounter = 1
     else:
         cyclecounter += 1
@@ -698,17 +800,16 @@ for items in masterintdict:
             listofzipmods = myzipdict[allthezips]
             #go through each individual mod and try to match to the outer loop mod we started with
             for individualmods in listofzipmods:
-                # I DON'T KNOW ANYMORE. IF ANY ONE OF THESE THINGS MATCHES THE OTHER ITS FINE. I SAID ITS FINE.
-                if str(bunchofmods) in individualmods or str(bunchofmods) in listofzipmods or individualmods in str(bunchofmods):
+                if str(bunchofmods).lower() in str(individualmods).lower() or str(individualmods).lower() in str(bunchofmods).lower() and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
                     foundthemod = True
                     nexusmodslink = None
                     try:
                         nexusmodlink = mylinkdict[allthezips]
-                        nexusmodlink = "https://www.nexusmods.com/morrowind/mods/"+str(nexusmodlink)
                         if moreinfo:
                             print("nexus link for",bunchofmods,"is",nexusmodlink,"zip file",allthezips)
                     except:
                         foundthemod = False
+
                 if foundthemod:
                     break
             if foundthemod:
@@ -722,22 +823,23 @@ for items in masterintdict:
     intcounter += 1
 formattedintlist += intexttableclose 
 
-print("exporting HTML")
+
 
 html_body = ""
 html_int_body = ""
 html_ext_body = ""
+
 
 html_allpage_navbar_start = """
 <nav class="nav">
 <div class="flex-container">
 <h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
 
-html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files."""
-if excludecounter > 0:
-    html_mainpage_navbar_mid += """ Skipped """+str(excludecounter)+""" files on the exclude list. """
-if failcounter > 0:
-    html_mainpage_navbar_mid += """ Failed to convert """+str(failcounter)+""" mods."""+str(failedmodlist)
+html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, """+str(totalcells)+""" exterior and """+str(totalints)+""" interior cells."""
+# if excludecounter > 0:
+    # html_mainpage_navbar_mid += """ Skipped """+str(excludecounter)+""" files on the exclude list. """
+# if failcounter > 0:
+    # html_mainpage_navbar_mid += """ Failed to convert """+str(failcounter)+""" mods."""+str(failedmodlist)
 
 html_intextpage_navbar_mid = """    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter cells or mods.." title="Type something">"""
 
@@ -746,6 +848,7 @@ html_allpage_navbar_end = """
       <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
       <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
       <li><a href="modmapper_exteriors.html" title="open page of Exterior cells">Exteriors</a></li>
+      <li><a href="modmapper_mods.html" title="open mod list">Mods</a></li>
       <li><a href="https://www.nexusmods.com/morrowind/mods/53069" title="NexusMods mod page (new tab)" target="_blank">NexusMods</a></li>
       <li><a href="https://github.com/acidzebra/modmapper" title="Modmapper GitHub page (new tab)" target="_blank">Github</a></li>
     </ul>
@@ -753,36 +856,84 @@ html_allpage_navbar_end = """
 </nav>
 """
 
+# MODS PAGE
+#basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
+print("assembling mods table...")
+modpage_table = ""
+modpage_table += modtableopen
+modpage_table += """<tr><td>color</td><td>esp/esm</td><td>author(s)</td><td>description</td><td>masters</td><td># of objects</td><td>zipfile</td><td>nexuslink</td></tr>"""
+filteredesps = len(finalesplist)
+print("assembling mods page table for",filteredesps,"esp/esm files")
+for myfiles in finalesplist:
+    color = basecolorhex[myfiles]
+    foundthemod = False
+    nexusmodlink = "#"
+    modzipfile = "N/A"
+    for allthezips in myzipdict:
+        nexusmodlink = "#"
+        # get the list of mods in the current zipfile
+        listofzipmods = myzipdict[allthezips]
+        #go through each individual mod and try to match to the outer loop mod we started with
+        for individualmods in listofzipmods:
+            if str(myfiles).lower() in str(individualmods).lower() or str(individualmods).lower() in str(myfiles).lower() and myfiles != "Morrowind.esm" and myfiles != "Bloodmoon.esm" and myfiles != "Tribunal.esm":
+                foundthemod = True
+                modzipfile = str(allthezips)
+                try:
+                    nexusmodlink = mylinkdict[allthezips]
+                    if moreinfo:
+                        print("nexus link for",files,"is",nexusmodlink,"zip file",allthezips)
+                except:
+                    foundthemod = False
+            if foundthemod:
+                break
+        if foundthemod:
+            break
+    modauthor = str(authordict[myfiles])
+    moddesc = str(descdict[myfiles])
+    modmasters = str(masterdict[myfiles])
+    modobjects = str(objectdict[myfiles])
+    myfileslist = []
+    myfileslist.append(myfiles)
+    docellcolor= calcoutputcellcolor(0,myfileslist)
+    
+    
+    
+    modpage_table += """<tr><td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\">#"""+str(docellcolor).upper()+"""</td><td><a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(myfiles)+"""</a></td><td>"""+modauthor+"""</td><td>"""+moddesc+"""</td><td>"""+modmasters+"""</td><td>"""+modobjects+"""</td><td>"""+modzipfile+"""</td><td><a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(nexusmodlink)+"""</a></td></tr>\n"""
+    #print(str(files),str(color),str(nexusmodlink))
+modpage_table += modtableclose
+
+print("assembling and exporting HTML...")
+mods_body = ""
 if splitpages:
+# mods page
+    mods_body += html_header
+    mods_body += html_allpage_navbar_start
+    mods_body += html_intextpage_navbar_mid
+    mods_body += html_allpage_navbar_end
+    mods_body += modpage_table
+    mods_body += html_footer 
+    mods_output = mods_body
     # index page
     html_body += html_allpage_navbar_start
     html_body += html_mainpage_navbar_mid
     html_body += html_allpage_navbar_end
     html_body += "".join(table)
     index_output = html_header+html_body+html_footer
-    # int page
+# int page
     html_int_body += html_allpage_navbar_start
     html_int_body += html_intextpage_navbar_mid
     html_int_body += html_allpage_navbar_end
-    i = 0
-    while i < 6:
-        html_int_body += """<br>"""
-        i+=1
     html_int_body += formattedintlist
     interior_output = html_header+html_int_body+html_footer
-    # ext page
+# ext page
     html_ext_body += html_allpage_navbar_start
     html_ext_body += html_intextpage_navbar_mid
     html_ext_body += html_allpage_navbar_end
-    i = 0
-    while i < 6:
-        html_ext_body += """<br>"""
-        i+=1
     html_ext_body += intexttableopen
     html_ext_body += formattedextlist
     html_ext_body += intexttableclose
     exterior_output = html_header+html_ext_body+html_footer
-    html_file= open("index.html","w")
+    html_file= open(exportfilename,"w")
     html_file.write(index_output)
     html_file.close()
     html_file= open("modmapper_interiors.html","w")
@@ -790,18 +941,28 @@ if splitpages:
     html_file.close()
     html_file= open("modmapper_exteriors.html","w")
     html_file.write(exterior_output)
-    html_file.close()
+    html_file.close
+    html_file= open("modmapper_mods.html","w")
+    html_file.write(mods_output)
+    html_file.close
+
+    
 else:
     html_body += "".join(table)
     html_body += formattedextlist
     html_body += formattedintlist
     index_output = html_header+html_body+html_footer
-    html_file= open("index.html","w")
+    html_file= open(exportfilename,"w")
     html_file.write(index_output)
     html_file.close()
 
-
-
+print("cell x min:",tablexmin,"cells x max",tablexmax,"cell y min",tableymin,"cell y max",tableymax,"tableborder",tableborder)
+print("calculated table width",tablewidth,"calculated table length",tablelength)
+print("topmost:",mostfaroutmodymax,"bottommost:",mostfaroutmodymin,"leftmost:",mostfaroutmodxmin,"rightmost:",mostfaroutmodxmax)
+if excludecounter > 0:
+    print(""" Skipped """+str(excludecounter)+""" files on the exclude list. """)
+if failcounter > 0:
+    print(""" Failed to convert """+str(failcounter)+""" mods."""+str(failedmodlist))
 print("all done! I hope you enjoy modmapper.")
 
 # Copyright © 2023 acidzebra

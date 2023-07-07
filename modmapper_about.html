@@ -1,0 +1,266 @@
+
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+<title>Morrowind Modmapper v0.8b3+</title>
+<meta name="keywords" content="HTML, CSS, JavaScript">
+<meta name="description" content="A map of many (maybe most) Morrowind landmass mods and other mods affecting interior/exterior cells, with links to the website where you can find them. And a record of decades and thousands of hours worth of fan creations, from the silly to the sublime.">
+<meta name="author" content="acidzebra">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<STYLE>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 100%;
+  background-color: #101010;
+  color: #808080;
+}
+
+a.linkstuff {
+  color: #a0a0a0; !important;
+  font-weight: normal;
+  text-decoration: normal;
+}
+
+a.linkstuff:visited {
+  color: #a0a0a0; !important;
+  font-weight: normal;
+  text-decoration: normal;
+}
+
+a.linkstuff:hover {
+  color: #c0c0c0; !important;
+  font-weight: normal;
+  text-decoration: normal;
+}
+
+a.linkstuff:active {
+  color: #b0b0b0; !important;
+  font-weight: normal;
+  text-decoration: normal;
+}
+
+a:link {
+  color: #909090;
+  text-decoration: none;
+}
+a:visited {
+  color: #909090;
+  text-decoration: none;
+}
+a:hover {
+  background-color: #909090;
+  text-decoration: none;
+  color: #ff0000;
+}
+a:active {
+  color: #909090;
+  text-decoration: none;
+} 
+
+table {
+  width: 100%;
+  margin-top: 80px;
+  border: none;
+  border-spacing:0;
+  border-collapse: collapse;
+}
+td .content {
+  white-space: pre;
+  aspect-ratio: 1 / 1 ;
+  text-align: center;
+  font-family:"Courier New", Courier, monospace;
+  font-size: 70%;
+}
+
+td:hover {
+  background-color: #909090;
+  font-weight: normal;
+  color: #ff0000;
+}
+td a {
+  display: inline-block;
+  height:100%;
+  width:100%;
+}
+.tooltip {
+  position: relative;
+  display: inline-block;
+  font-size: 100%;
+}
+.tooltip .tooltiptext {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 100%;
+  white-space: normal;
+  font-weight: normal;
+  visibility: hidden;
+  width: 1000%;
+  background-color: #555;
+  color: #fff;
+  text-align: left;
+  border-radius: 6px;
+  padding: 5px 5px 5px 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.tooltip:hover .tooltiptext {
+  white-space: normal;
+  visibility: visible;
+  font-size: 100%;
+  opacity: 1;
+}
+.nav {
+  position: fixed;
+  background-color: #06111c;
+  background: #06111c;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+}
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 2px;
+}
+.nav ul {
+  display: flex;
+  list-style-type: none;
+  align-items: center;
+  justify-content: center;
+}
+.nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 0px 5px;
+}
+
+#intextinput {
+  width: 40%;
+  padding: 12px 20px 12px 40px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.intexttable {
+  width: 100%;
+  border: none;
+  margin-bottom: 12px;
+  margin-top: 80px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 80%;
+  border-collapse: separate;
+}
+
+.intexttable a {
+  display: inline;
+  font-weight: normal;
+  background-color: #101010;
+  color: #a0a0a0;
+}
+
+.intexttable td:hover {
+  font-weight: normal;
+  background-color: #101010;
+  color: #808080;
+}
+
+.intexttable a:hover {
+  font-weight: normal;
+  background-color: #101010;
+  color: #ffff00;
+}
+
+.modtable {
+  width: 100%;
+  border: none;
+  margin-bottom: 12px;
+  margin-top: 80px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 80%;
+}
+
+.modtable a {
+  display: inline;
+  font-weight: normal;
+}
+
+.modtable td:hover {
+  font-weight: normal;
+  
+}
+
+.modtable td:hover {
+  font-weight: normal;
+  background-color: #101010;
+  color: #808080;
+}
+
+.modtable a:hover {
+  font-weight: normal;
+  background-color: #101010;
+  color: #ffff00;
+}
+  </STYLE>
+</HEAD>
+<BODY>
+
+<nav class="nav">
+<div class="flex-container">
+<h2 class="logo"><a href="index.html#map[-34, -9]" title="jump to map center (more or less)">Morrowind Modmapper 0.8b3</a></h2>    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter any word on the page... (wait for page load!)" title="Type something">
+    <ul>
+      <li><a href="index.html#map[-34, -9]" title="jump to map center (more or less)">Map</a></li>
+      <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
+      <li><a href="modmapper_exteriors.html" title="open page of Exterior cells">Exteriors</a></li>
+      <li><a href="modmapper_mods.html" title="open mod list">Mods</a></li>
+      <li><a href="modmapper_about.html" title="about modmapper">About</a></li>
+      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" title="NexusMods mod page (new tab)" target="_blank">NexusMods</a></li>
+      <li><a href="https://github.com/acidzebra/modmapper" title="Modmapper GitHub page (new tab)" target="_blank">Github</a></li>
+    </ul>
+  </div>
+</nav>
+<br><br><br><br><br><br>
+<h2>About ModMapper</h2>
+<p>A toy I wrote for myself while working on <a href="https://www.nexusmods.com/morrowind/mods/53034" target="_blank">Lawnmower</a>. It might be of some use if you're trying to find mod conflict areas, when you are hunting for a good place to make a new mod (hint: it's not Balmora) or see if landmass mods conflict. Or just because you like very low-rez maps rendered as a HTML table. It also serves as a record of decades of Morrowind modding and the thousands of hours fans have put into building new content.</p>
+
+<p>Modmapper will examine a folder of one or more mods and build a html file with a map of exterior cells. It will show which mods alter a cell, with brighter colors meaning more mods affecting that cell. Mouse over a cell to see a tooltip with mods affecting that cell. Click on any cell with yellow text to jump to a list entry for that cell with the mods affecting it. Use [back] function of your browser to return to map. Modmapper will also build a list of interior cells and which mods alter them and add that list to the end of the html file, you can search like you would on any web page. Finally, it will build a table of mods, the name of the zip file it was found in, and if known, a link to Nexus or other places where the mod can be found.</p>
+
+<p>Modmapper does not alter any game files, it will read esp/esm files in a folder and produce a few HTML files in the same folder. It does not require access to other resources of a mod, just the esp or esm. You can use it to inspect entire modlists, or just look at a specific mod, the overlap between two mods, etc.</p>
+<h2>Known Issues</h2>
+<ul>The Interiors page is getting a little unwieldy (and the Exteriors too). Not really sure what to do about it, it's a lot of data. Maybe pagination? But that would require some boring pagination code.</ul>
+
+<h2>Version History</h2>
+<p>
+
+# 0.1 - initial release<br>
+# 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM<br>
+# 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.<br>
+# 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit<br>
+# 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)<br>
+# 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work<br>
+# 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages, some css/presentation cleanup, better cell coloration function (more saturation, less trend to white)<br>
+# 0.8 - uhhh, bunch of stuff, like linking up a mod page to nexusmods/archive.org. I'm mostly working on the transfer to a proper DB.<br>
+
+</p>
+<h2>Web Page Changelog</h2>
+<p>
+<a href=\"https://github.com/acidzebra/modmapper/activity?ref=modmapper-page\" target="_blank">https://github.com/acidzebra/modmapper/activity?ref=modmapper-page</a>
+</p>
+
+</div>
+</BODY>
+</HTML>

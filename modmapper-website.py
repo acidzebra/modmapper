@@ -9,14 +9,17 @@ version = "0.8b3"
 #
 # run python modmapper.py "path-to-modfolder"
 # 
-# 0.1 - initial release
-# 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM
-# 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.
-# 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit
-# 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)
-# 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work
-# 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages, some css/presentation cleanup, better cell coloration function (more saturation, less trend to white)
-# 0.8 - uhhh, bunch of stuff?
+version_history = """
+# 0.1 - initial release<br>
+# 0.2 - a little code cleanup and some cosmetic fixes (forgot to close a HTML tag), made esp/esm search case insensitive because some monsters name their file something.EsM<br>
+# 0.3 - added hacky support for both rfuzzo's and G7's versions of tes3conv.exe css improvements - cell lights up on hover, entire cell (when linked) is now clickable. Might not work on all browsers.<br>
+# 0.4 - missed interior flag(s?), added, shrunk table a little, made highlighted cell white to avoid clash with gray cells,cleaned up the version check code a bit<br>
+# 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)<br>
+# 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work<br>
+# 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages, some css/presentation cleanup, better cell coloration function (more saturation, less trend to white)<br>
+# 0.8 - uhhh, bunch of stuff, like linking up a mod page to nexusmods/archive.org. I'm mostly working on the transfer to a proper DB.<br>
+"""
+
 #
 # not tested on anything except Windows OS+(open)MW, English-language versions.
 
@@ -31,17 +34,18 @@ deletemodjson = False
 tableborder = 2
 # whether the TR landmass colors should override other landmass colors (other overlapping mods will be seen as a brightening of the colors), defaults to true because the alternative is a clown car of a map (bit arguably better to see conflicts there)
 overridetr = True
+excludetr = False
 # skip these mods if found. You can add any mods you don't want on the map here.
-excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp"]
+excludelist = ["autoclean_cities_vanilla.esp","autoclean_cities_TR.ESP","Cyrodiil_Grass.ESP","Sky_Main_Grass.esp","TR_Data.esm","Tamriel_Data.esm","Better Heads Bloodmoon addon.esm","Better Heads Tribunal addon.esm","Better Heads.esm","OAAB_Data.esm","Better Clothes_v1.1.esp","Better Bodies.esp","Eden.esp"]
 #  Map color control settings, not really fiddled with this beyond making them available
 # controls coloring for cells, min value 0 max value should be less than maxbrightness, default 10
 minbrightness = 5
 # sensible values between ~100 and 200, min is a value above minbrightness, max 255. No checks or guard rails. Lower values produce more muted colors, default 200
-maxbrightness = 200
+maxbrightness = 160
 # improve contrast for cells with few mods affecting them (only for mods, not base game)
 lowmodcountcontrastincrease = True
 # what is considered a "low mod count"
-lowmodcount = 10
+lowmodcount = 25
 # controls the increase of values between steps (somewhat), values between 0-1 make the most sense, not really tested beyond that, default 1
 stepmodifier = 1
 # background and text color
@@ -54,7 +58,7 @@ watertextcolor = "1010ff"
 addemptycells = False
 
 # higlighted mods, put mod(s) here that you want "on top" of the map; their cell color will override whatever other mods normally get loaded first (normal = first original game, TR stuff, then rest of the content in alphabetical order). E.g. you can highlight a mod on the main continent with this, which normally would be a shade of green.You may also want to set a specific color override below.
-highlightmodlist = []
+highlightmodlist = ["TheBlackMill.esp","Clean Black Queen Chronicles Ver 2.5.esp","Bal_Gurandok_FINAL.ESP","Dulsya Isle.esp","Fort Selgrim.esp","Specter Island.esp","KN01_KeeningCity.esp","TheManifoldSpires.esp","Bitter_Island.esp","GS_Tamriel Part1_Black Marsh.esp","SOPBeta1.4.esp","MD_Azurian Isles.esm","PMR _ Sea of Destiny 1.1 (fixed).esp","blacklightv1.34.esp","legato.esp","Rahj.esm","Tel_Meskoa_Tel_Matouigius_1.3.8_EV.esp","Hadeborg Castle V1.0.esp","NON1.LoveintheTimeofDaedra.v1.03.esp","TheGloryRoad.esm","DA_Sobitur_Facility_Clean.ESP","DA_Sobitur_Repurposed_1.ESP","Silgrad_Tower_external_build_1_4_4.esp","Shadowfel.ESP","Harsh outlands 0.1.ESP","elskjiver.esp","witchwoodXx.esp","TheBlackMill11.esp","The Goblin Lab v1.1.esp","Inferno's Island Revisited.esp","Havish.esm","Tel Nechim.esp","The_Outlands.esp","Clean New Roman City002b001b.esp","Clean Roman city v.4 expansion added #4.esp","Clean Roman city v.4 MORROWIND ONLY.esp","xStros_01.ESP","Frankenfell.esp","Beyond YsGramor v2.5.esm","Boe_Shuu.esp","Mournhold Downtown.esp","BT_Whitewolf_2_0_HOTV.esm","BT_Whitewolf_2_0_HOTV.esp","BT_Whitewolf_2_0_TOTSP_1624000965.esm","Booty.esp","Cixe_UnofficialExpansion.esp","Isengard (v1.2).esp","Isengard (v1.3).esp","Korobal v1.1.esp"]
 
 
 # color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
@@ -102,6 +106,10 @@ html_header = """
 <HTML>
 <HEAD>
 <title>Morrowind Modmapper v"""+str(version)+"""+</title>
+<meta name="keywords" content="HTML, CSS, JavaScript">
+<meta name="description" content="A map of many (maybe most) Morrowind landmass mods and other mods affecting interior/exterior cells, with links to the website where you can find them. And a record of decades and thousands of hours worth of fan creations, from the silly to the sublime.">
+<meta name="author" content="acidzebra">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <STYLE>
 * {
   box-sizing: border-box;
@@ -320,6 +328,28 @@ html_footer = """
 </BODY>
 </HTML>
 """
+about_page_top = """
+<h2>About ModMapper</h2>
+<p>A toy I wrote for myself while working on <a href=\"https://www.nexusmods.com/morrowind/mods/53034\" target="_blank">Lawnmower</a>. It might be of some use if you're trying to find mod conflict areas, when you are hunting for a good place to make a new mod (hint: it's not Balmora) or see if landmass mods conflict. Or just because you like very low-rez maps rendered as a HTML table. It also serves as a record of decades of Morrowind modding and the thousands of hours fans have put into building new content.</p>
+
+<p>Modmapper will examine a folder of one or more mods and build a html file with a map of exterior cells. It will show which mods alter a cell, with brighter colors meaning more mods affecting that cell. Mouse over a cell to see a tooltip with mods affecting that cell. Click on any cell with yellow text to jump to a list entry for that cell with the mods affecting it. Use [back] function of your browser to return to map. Modmapper will also build a list of interior cells and which mods alter them and add that list to the end of the html file, you can search like you would on any web page. Finally, it will build a table of mods, the name of the zip file it was found in, and if known, a link to Nexus or other places where the mod can be found.</p>
+
+<p>Modmapper does not alter any game files, it will read esp/esm files in a folder and produce a few HTML files in the same folder. It does not require access to other resources of a mod, just the esp or esm. You can use it to inspect entire modlists, or just look at a specific mod, the overlap between two mods, etc.</p>
+
+<h2>Known Issues</h2>
+<ul>The Interiors page is getting a little unwieldy (and the Exteriors too). Not really sure what to do about it, it's a lot of data. Maybe pagination? But that would require some boring pagination code.</ul>
+
+<h2>Version History</h2>
+<p>
+"""
+
+about_page_bottom = """
+</p>
+<h2>Web Page Changelog</h2>
+<p>
+<a href=\"https://github.com/acidzebra/modmapper/activity?ref=modmapper-page\" target=\"_blank\">https://github.com/acidzebra/modmapper/activity?ref=modmapper-page</a>
+</p>
+"""
 
 intexttableopen = """
     <table id="bigtable" class="intexttable">
@@ -331,22 +361,24 @@ intexttableclose = """
 </table>
 <script>
 function intextsearch() {
-  var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("intextinput");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("bigtable");
-  tr = table.getElementsByTagName("tr");
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      txtValue = td.textContent || td.innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
-    }       
-  }
+    var input, filter, table, tr, td, i, txtValue;
+    input = document.getElementById("intextinput");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("bigtable");
+    tr = table.getElementsByTagName("tr");
+    for (i = 0; i < tr.length; i++) {
+        var allTDs = tr[i].getElementsByTagName("td");
+
+        for (index = 0; index < allTDs.length; index++) {
+            txtValue = allTDs[index].textContent || allTDs[index].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                break;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
 }
 </script>
 """
@@ -415,9 +447,9 @@ def calcoutputcellcolor(mymodcount,mymodlist):
     returnvalue = "606060"
     basevalue = 0
     currentmod = ""
-    valuestep = stepmodifier*(255/maxmodcellist)
+    valuestep = stepmodifier*(300/maxmodcellist)
     if mymodcount <= lowmodcount and not "Morrowind.esm" in mymodlist and not "Bloodmoon.esm" in mymodlist and lowmodcountcontrastincrease:
-        valuestep += 15
+        valuestep += 10
     finalcolorincrease = min(int(basevalue+(mymodcount*valuestep)),255)
     for items in mymodlist:
         currentmod = items
@@ -486,13 +518,21 @@ if "Cyr_Main.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Cyr_Main.esm")))
 if "Sky_Main.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Sky_Main.esm"))) 
+if excludetr:
+    if "TR_" in esplist or "_TR" in esplist:
+        esplist.pop()
 if overridetr:
     if "TR_Restexteriors.ESP" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Restexteriors.ESP")))
     if "TR_Mainland.esm" in esplist:
         esplist.insert(0, esplist.pop(esplist.index("TR_Mainland.esm")))
 if "Solstheim Tomb of The Snow Prince.esm" in esplist:
-    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm")))   
+    esplist.insert(0, esplist.pop(esplist.index("Solstheim Tomb of The Snow Prince.esm"))) 
+for items in highlightmodlist:
+    for stuff in esplist:
+        if str(items).casefold() == str(stuff).casefold():
+            esplist.insert(0, esplist.pop(esplist.index(stuff)))
+            print("popped",stuff)
 if "Siege at Firemoth.esp" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Siege at Firemoth.esp")))  
 if "Tribunal.esm" in esplist:
@@ -501,11 +541,7 @@ if "Bloodmoon.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Bloodmoon.esm")))
 if "Morrowind.esm" in esplist:
     esplist.insert(0, esplist.pop(esplist.index("Morrowind.esm")))
-for items in highlightmodlist:
-    for stuff in esplist:
-        if str(items).casefold() == str(stuff).casefold():
-            esplist.insert(0, esplist.pop(esplist.index(stuff)))
-            print("popped",stuff)
+
 authordict = {}
 descdict = {}
 masterdict = {}
@@ -522,8 +558,12 @@ for files in esplist:
             colg = hexcolors[:-2]
             colg = colg[2:]
             colb = hexcolors[4:]
+        if "zzzzz" in str(files):
+            hexcolors = "000020"
         if files not in basecolorhex:
             basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
+
+            
         tes3convversion = 0
         jsonfilename = files[:-4]+".json"
         if deletemodjson and os.path.isfile(str(jsonfilename)):
@@ -659,6 +699,52 @@ tablerows = 0
 tablecolumns = 0
 tooltipdata = ""
 formattedextlist = ""
+formattedintlist = ""
+formattedintlist += intexttableopen
+masterintdict = dict(sorted(masterintdict.items())) 
+intcounter = 1
+cyclecounter = 1
+totalints= len(masterintdict)
+mastermoddict = dict(sorted(mastermoddict.items()))
+
+html_body = ""
+html_int_body = ""
+html_ext_body = ""
+
+html_allpage_navbar_start = """
+<nav class="nav">
+<div class="flex-container">
+<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
+
+html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, """+str(totalcells)+""" exterior and """+str(totalints)+""" interior cells."""
+# if excludecounter > 0:
+    # html_mainpage_navbar_mid += """ Skipped """+str(excludecounter)+""" files on the exclude list. """
+# if failcounter > 0:
+    # html_mainpage_navbar_mid += """ Failed to convert """+str(failcounter)+""" mods."""+str(failedmodlist)
+
+html_intextpage_navbar_mid = """    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter cells or mods.. (wait for page load!)" title="Type something">"""
+
+html_modpage_navbar_mid = """    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter any word on the page... (wait for page load!)" title="Type something">"""
+
+html_allpage_navbar_end = """
+    <ul>
+      <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
+      <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
+      <li><a href="modmapper_exteriors.html" title="open page of Exterior cells">Exteriors</a></li>
+      <li><a href="modmapper_mods.html" title="open mod list">Mods</a></li>
+      <li><a href="modmapper_about.html" title="about modmapper">About</a></li>
+      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" title="NexusMods mod page (new tab)" target="_blank">NexusMods</a></li>
+      <li><a href="https://github.com/acidzebra/modmapper" title="Modmapper GitHub page (new tab)" target="_blank">Github</a></li>
+    </ul>
+  </div>
+</nav>
+"""
+
+
+
+
+
+
 while tablerows < tablelength:
     print("Assembling map row",tablerows,"of",(tablelength-1),"(",(tablewidth-1),"columns/cells per row). topmost:",mostfaroutmodymax,"bottommost:",mostfaroutmodymin,"leftmost:",mostfaroutmodxmin,"rightmost:",mostfaroutmodxmax )
     table.append("""\n\t</tr>\n""")
@@ -715,9 +801,10 @@ while tablerows < tablelength:
                         if foundthemod:
                             break
                     if foundthemod:
-                        extcelldatamodlistfound += """<a class=\"extlink\" href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a>, """
+                        #extcelldatamodlistfound += """<a class=\"extlink\" href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a>, """
+                        extcelldatamodlistfound += """<a class=\"extlink\" href=\"modmapper_mods.html#"""+str(individualmods).lstrip()+"""\">"""+str(bunchofmods).lstrip()+"""</a>, """
                     else:
-                        extcelldatamodlistnotfound += str(bunchofmods)+""", """
+                        extcelldatamodlistnotfound += str(bunchofmods).lstrip()+""", """
                     foundthemod=False
                     nexusmodslink=""
                 extcelldatamodlist += extcelldatamodlistfound
@@ -764,14 +851,7 @@ table.append("""<table>\n""")
 table.reverse()
 
 
-formattedintlist = ""
-formattedintlist += intexttableopen
 
-masterintdict = dict(sorted(masterintdict.items())) 
-
-intcounter = 1
-cyclecounter = 1
-totalints= len(masterintdict)
 print("generating and linking interior list for "+str(totalints)+" interior cells.")
 for items in masterintdict:
     if cyclecounter > 499:
@@ -816,45 +896,12 @@ for items in masterintdict:
                 break
         bunchofmods.replace(".", ",")
         if foundthemod:
-            intcelldata += """<a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(bunchofmods)+"""</a> """
+            intcelldata += """<a href=\"modmapper_mods.html#"""+str(bunchofmods).lstrip()+"""\" id=\""""+str(bunchofmods).lstrip()+"""\">"""+str(bunchofmods).lstrip()+"""</a> """
         else:
             intcelldata += str(bunchofmods)+""" """
-    formattedintlist += """<tr><td><br>Cell: <b>"""+str(items)+"""</b> ("""+str(modcount)+""" mods)<BR>Mods: """+str(intcelldata)+"""</td></tr>\n"""
+    formattedintlist += """<tr><td><b>"""+str(items)+"""</b></td><td>"""+str(modcount)+"""</td><td>"""+str(intcelldata)+"""</td></tr>\n"""
     intcounter += 1
 formattedintlist += intexttableclose 
-
-
-
-html_body = ""
-html_int_body = ""
-html_ext_body = ""
-
-
-html_allpage_navbar_start = """
-<nav class="nav">
-<div class="flex-container">
-<h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
-
-html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, """+str(totalcells)+""" exterior and """+str(totalints)+""" interior cells."""
-# if excludecounter > 0:
-    # html_mainpage_navbar_mid += """ Skipped """+str(excludecounter)+""" files on the exclude list. """
-# if failcounter > 0:
-    # html_mainpage_navbar_mid += """ Failed to convert """+str(failcounter)+""" mods."""+str(failedmodlist)
-
-html_intextpage_navbar_mid = """    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter cells or mods.." title="Type something">"""
-
-html_allpage_navbar_end = """
-    <ul>
-      <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
-      <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
-      <li><a href="modmapper_exteriors.html" title="open page of Exterior cells">Exteriors</a></li>
-      <li><a href="modmapper_mods.html" title="open mod list">Mods</a></li>
-      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" title="NexusMods mod page (new tab)" target="_blank">NexusMods</a></li>
-      <li><a href="https://github.com/acidzebra/modmapper" title="Modmapper GitHub page (new tab)" target="_blank">Github</a></li>
-    </ul>
-  </div>
-</nav>
-"""
 
 # MODS PAGE
 #basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
@@ -895,10 +942,7 @@ for myfiles in finalesplist:
     myfileslist = []
     myfileslist.append(myfiles)
     docellcolor= calcoutputcellcolor(0,myfileslist)
-    
-    
-    
-    modpage_table += """<tr><td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\">#"""+str(docellcolor).upper()+"""</td><td><a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(myfiles)+"""</a></td><td>"""+modauthor+"""</td><td>"""+moddesc+"""</td><td>"""+modmasters+"""</td><td>"""+modobjects+"""</td><td>"""+modzipfile+"""</td><td><a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(nexusmodlink)+"""</a></td></tr>\n"""
+    modpage_table += """<tr><td bgcolor=#"""+str(docellcolor)+""" style=\"color:#"""+textcolors+""";\">#"""+str(docellcolor).upper()+"""</td><td><a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\" id=\""""+str(myfiles)+"""\">"""+str(myfiles)+"""</a></td><td>"""+modauthor+"""</td><td>"""+moddesc+"""</td><td>"""+modmasters+"""</td><td>"""+modobjects+"""</td><td>"""+modzipfile+"""</td><td><a href=\""""+str(nexusmodlink)+"""\" target=\"_blank\">"""+str(nexusmodlink)+"""</a></td></tr>\n"""
     #print(str(files),str(color),str(nexusmodlink))
 modpage_table += modtableclose
 
@@ -908,7 +952,7 @@ if splitpages:
 # mods page
     mods_body += html_header
     mods_body += html_allpage_navbar_start
-    mods_body += html_intextpage_navbar_mid
+    mods_body += html_modpage_navbar_mid
     mods_body += html_allpage_navbar_end
     mods_body += modpage_table
     mods_body += html_footer 
@@ -945,8 +989,19 @@ if splitpages:
     html_file= open("modmapper_mods.html","w")
     html_file.write(mods_output)
     html_file.close
-
-    
+# about page
+    about_body = ""
+    about_body += html_allpage_navbar_start
+    about_body += html_modpage_navbar_mid
+    about_body += html_allpage_navbar_end
+    about_body += """<br><br><br><br><br><br>"""
+    about_body += about_page_top
+    about_body += version_history
+    about_body += about_page_bottom
+    about_body = html_header+about_body+html_footer
+    html_file= open("modmapper_about.html","w")
+    html_file.write(about_body)
+    html_file.close
 else:
     html_body += "".join(table)
     html_body += formattedextlist

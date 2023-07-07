@@ -1,1 +1,12 @@
-{"Uvirith's Legacy_3.53.esp":"https://stuporstar.sarahdimento.com/","elskjiver.esp":"https://www.moddb.com/mods/the-elskjiver-mod/downloads/the-elskjiver-mod","Dulsya Isle.esp":"https://www.moddb.com/mods/dulsya-isle/downloads/dulsya-isle","Harsh outlands 0.1.ESP":"https://www.moddb.com/mods/harsh-lands","xStros_01.ESP":"https://github.com/mothpot/TES3A-Abecean-Isles","xStros_Main.ESP":"https://github.com/mothpot/TES3A-Abecean-Isles","Silgrad_Tower_external_build_1-4_4.esp":"https://www.moddb.com/mods/silgrad-tower/downloads/silgrad-tower-mod","The Doors of Oblivion 1.4.esp":"https://github.com/revenorror/The-Doors-of-Oblivion"}
+{
+"Uvirith's Legacy_3.53.esp":"https://stuporstar.sarahdimento.com/",
+"elskjiver.esp":"https://www.moddb.com/mods/the-elskjiver-mod/downloads/the-elskjiver-mod",
+"Dulsya Isle.esp":"https://www.moddb.com/mods/dulsya-isle/downloads/dulsya-isle",
+"Harsh outlands 0.1.ESP":"https://www.moddb.com/mods/harsh-lands",
+"xStros_01.ESP":"https://github.com/mothpot/TES3A-Abecean-Isles",
+"xStros_Main.ESP":"https://github.com/mothpot/TES3A-Abecean-Isles",
+"Silgrad_Tower_external_build_1-4_4.esp":"https://www.moddb.com/mods/silgrad-tower/downloads/silgrad-tower-mod",
+"The Doors of Oblivion 1.4.esp":"https://github.com/revenorror/The-Doors-of-Oblivion",
+"MA_RoK_Eng v0001.esm":"https://www.moddb.com/mods/myar-aranath-rellict-of-kallidar",
+"MD_Azurian Isles.esm":"https://github.com/MelchiorDahrk/Lyithdonea",
+"Esroniet.ESP":"https://github.com/MelchiorDahrk/Esroniet"}

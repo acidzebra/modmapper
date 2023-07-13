@@ -17,7 +17,7 @@ version_history = """
 # 0.5 - implemented random colors, increased contrast for cells with low modcount, got rid of stupid tooltip pointer since I couldn't get it to point to the cell itself, made sure mw.esm and bm.esm load first if present (to preserve color overrides)<br>
 # 0.6 - more map stuff, some new user switches for map color control, brought back color overrides now that randomness seems to work<br>
 # 0.7 - export now defaults to index.html instead of modmapper.html, split out ints and exts to separate export files (as the main file is getting chunky), some more config switches, search/text filters on interior and exterior pages, some css/presentation cleanup, better cell coloration function (more saturation, less trend to white)<br>
-# 0.8 - uhhh, bunch of stuff, like linking up a mod page to nexusmods/archive.org. I'm mostly working on the transfer to a proper DB.<br>
+# 0.8 - added separate page with mod author/details/links. Linked up mods to nexusmods/archive.org Added about page (pretty convoluted, I should rewrite it as a function), this is done through a seperate script "modidentifier.py" which also does some other tricks (you can find this in the <a href=\"https://github.com/acidzebra/modmapper/tree/modmapper-website-gen\">website-gen</a> branch on github but it's pretty rough. I'm mostly working on the transfer to a proper DB and a more generalized way to interact with mods (including generating maps on the fly).<br>
 """
 
 #
@@ -58,7 +58,65 @@ watertextcolor = "1010ff"
 addemptycells = False
 
 # higlighted mods, put mod(s) here that you want "on top" of the map; their cell color will override whatever other mods normally get loaded first (normal = first original game, TR stuff, then rest of the content in alphabetical order). E.g. you can highlight a mod on the main continent with this, which normally would be a shade of green.You may also want to set a specific color override below.
-highlightmodlist = ["TheBlackMill.esp","Clean Black Queen Chronicles Ver 2.5.esp","Bal_Gurandok_FINAL.ESP","Dulsya Isle.esp","Fort Selgrim.esp","Specter Island.esp","KN01_KeeningCity.esp","TheManifoldSpires.esp","Bitter_Island.esp","GS_Tamriel Part1_Black Marsh.esp","SOPBeta1.4.esp","MD_Azurian Isles.esm","PMR _ Sea of Destiny 1.1 (fixed).esp","blacklightv1.34.esp","legato.esp","Rahj.esm","Tel_Meskoa_Tel_Matouigius_1.3.8_EV.esp","Hadeborg Castle V1.0.esp","NON1.LoveintheTimeofDaedra.v1.03.esp","TheGloryRoad.esm","DA_Sobitur_Facility_Clean.ESP","DA_Sobitur_Repurposed_1.ESP","Silgrad_Tower_external_build_1_4_4.esp","Shadowfel.ESP","Harsh outlands 0.1.ESP","elskjiver.esp","witchwoodXx.esp","TheBlackMill11.esp","The Goblin Lab v1.1.esp","Inferno's Island Revisited.esp","Havish.esm","Tel Nechim.esp","The_Outlands.esp","Clean New Roman City002b001b.esp","Clean Roman city v.4 expansion added #4.esp","Clean Roman city v.4 MORROWIND ONLY.esp","xStros_01.ESP","Frankenfell.esp","Beyond YsGramor v2.5.esm","Boe_Shuu.esp","Mournhold Downtown.esp","BT_Whitewolf_2_0_HOTV.esm","BT_Whitewolf_2_0_HOTV.esp","BT_Whitewolf_2_0_TOTSP_1624000965.esm","Booty.esp","Cixe_UnofficialExpansion.esp","Isengard (v1.2).esp","Isengard (v1.3).esp","Korobal v1.1.esp"]
+highlightmodlist = [
+                    "blacklightv1.34.esp",
+                    "The Island v1.3.esp",
+                    "The Island.esp",
+                    "Skeleton_Island_V3.00.esp",
+                    "The Isles.esp",
+                    "Nebula Isles.ESP",
+                    "Mournblade.esp",
+                    "Sonta.esp",
+                    "AshlanderTent_LothavorsLegacy.esp",
+                    "Rise of the Witches",
+                    "TheBlackMill.esp",
+                    "Clean Black Queen Chronicles Ver 2.5.esp",
+                    "Bal_Gurandok_FINAL.ESP",
+                    "Dulsya Isle.esp",
+                    "Fort Selgrim.esp",
+                    "Specter Island.esp",
+                    "KN01_KeeningCity.esp",
+                    "TheManifoldSpires.esp",
+                    "Bitter_Island.esp",
+                    "SOPBeta1.4.esp",
+                    "MD_Azurian Isles.esm",
+                    "PMR _ Sea of Destiny 1.1 (fixed).esp",
+                    "legato.esp",
+                    "Rahj.esm",
+                    "Tel_Meskoa_Tel_Matouigius_1.3.8_EV.esp",
+                    "Hadeborg Castle V1.0.esp",
+                    "NON1.LoveintheTimeofDaedra.v1.03.esp",
+                    "TheGloryRoad.esm",
+                    "Silgrad_Tower_external_build_1_4_4.esp",
+                    "Shadowfel.ESP","Harsh outlands 0.1.ESP",
+                    "elskjiver.esp",
+                    "witchwoodXx.esp",
+                    "TheBlackMill11.esp",
+                    "The Goblin Lab v1.1.esp",
+                    "Inferno's Island Revisited.esp",
+                    "Havish.esm",
+                    "Tel Nechim.esp",
+                    "The_Outlands.esp",
+                    "Clean New Roman City002b001b.esp",
+                    "Clean Roman city v.4 expansion added #4.esp",
+                    "Clean Roman city v.4 MORROWIND ONLY.esp",
+                    "Frankenfell.esp",
+                    "Beyond YsGramor v2.5.esm",
+                    "Boe_Shuu.esp",
+                    "Mournhold Downtown.esp",
+                    "BT_Whitewolf_2_0_HOTV.esm",
+                    "BT_Whitewolf_2_0_HOTV.esp",
+                    "BT_Whitewolf_2_0_TOTSP_1624000965.esm",
+                    "GS_Tamriel Part1_Black Marsh.esp",
+                    "Booty.esp",
+                    "Cixe_UnofficialExpansion.esp",
+                    "DA_Sobitur_Facility_Clean.ESP",
+                    "DA_Sobitur_Repurposed_1.ESP",
+                    "Isengard (v1.2).esp",
+                    "Isengard (v1.3).esp",
+                    "Korobal v1.1.esp",
+                    "Kalendaar_V1 _ Eng.esm"
+                    ]
 
 
 # color overrides, can add your own here or change colors, just copy one of the earlier lines, color format is "modname":"web/hex RGB". CASE sEnSItIvE.
@@ -166,7 +224,7 @@ a:active {
 
 table {
   width: 100%;
-  margin-top: 80px;
+  margin-top: 90px;
   border: none;
   border-spacing:0;
   border-collapse: collapse;
@@ -261,7 +319,7 @@ td a {
   width: 100%;
   border: none;
   margin-bottom: 12px;
-  margin-top: 80px;
+  margin-top: 90px;
   margin-left: auto;
   margin-right: auto;
   font-size: 80%;
@@ -291,7 +349,7 @@ td a {
   width: 100%;
   border: none;
   margin-bottom: 12px;
-  margin-top: 80px;
+  margin-top: 90px;
   margin-left: auto;
   margin-right: auto;
   font-size: 80%;
@@ -318,6 +376,14 @@ td a {
   background-color: #101010;
   color: #ffff00;
 }
+
+.programlink {
+  color: #ffff00;
+}
+
+.programlink a {
+  color: #ffff00;
+}
   </STYLE>
 </HEAD>
 <BODY>
@@ -329,8 +395,10 @@ html_footer = """
 </HTML>
 """
 about_page_top = """
-<h2>About ModMapper</h2>
-<p>A toy I wrote for myself while working on <a href=\"https://www.nexusmods.com/morrowind/mods/53034\" target="_blank">Lawnmower</a>. It might be of some use if you're trying to find mod conflict areas, when you are hunting for a good place to make a new mod (hint: it's not Balmora) or see if landmass mods conflict. Or just because you like very low-rez maps rendered as a HTML table. It also serves as a record of decades of Morrowind modding and the thousands of hours fans have put into building new content.</p>
+<h2 style=\"margin-top: 90px;\">About ModMapper</h2>
+<p>A toy I wrote for myself while working on <a href=\"https://www.nexusmods.com/morrowind/mods/53034\" target="_blank">Lawnmower</a>. It might be of some use if you're trying to find mod conflict areas, when you are hunting for a good place to make a new mod (hint: it's not Balmora) or see if landmass mods conflict. Or just because you like very low-rez maps rendered as a HTML table.</p>
+
+<p>It also serves as a record of decades of Morrowind modding and the thousands of hours fans have put into building new content, adding links to places where you can find this content. The overarching goals are to be comprehensive, produce simple yet attractive output, be zero-cost & zero-maintenance, robust, and durable. Will Github vanish eventually? Sure. Will it last longer than my ability and/or interest in maintaining my own page? Definitely. Sites die. Morrowind modding history is littered with dead sites, dead links, content that people worked hard on and now has all but disappeared.</p>
 
 <p>Modmapper will examine a folder of one or more mods and build a html file with a map of exterior cells. It will show which mods alter a cell, with brighter colors meaning more mods affecting that cell. Mouse over a cell to see a tooltip with mods affecting that cell. Click on any cell with yellow text to jump to a list entry for that cell with the mods affecting it. Use [back] function of your browser to return to map. Modmapper will also build a list of interior cells and which mods alter them and add that list to the end of the html file, you can search like you would on any web page. Finally, it will build a table of mods, the name of the zip file it was found in, and if known, a link to Nexus or other places where the mod can be found.</p>
 
@@ -349,6 +417,8 @@ about_page_bottom = """
 <p>
 <a href=\"https://github.com/acidzebra/modmapper/activity?ref=modmapper-page\" target=\"_blank\">https://github.com/acidzebra/modmapper/activity?ref=modmapper-page</a>
 </p>
+<h2>Overview of Entire Map</h2>
+<img src=\"https://i.imgur.com/45Xuc9k.png\" alt=\"zoomed-out image of map\" style=\"border:3px solid white;display: block;margin-left: auto;margin-right: auto; width: 90%;\">
 """
 
 intexttableopen = """
@@ -436,6 +506,7 @@ mostfaroutmodymin = ""
 mostfaroutmodymax = ""
 authordict = {}
 descdict = {}
+
 def int2hex(x):
     val = hex(x)[2:]
     val = "0"+val if len(val)<2 else val
@@ -562,8 +633,6 @@ for files in esplist:
             hexcolors = "000020"
         if files not in basecolorhex:
             basecolorhex.update({files:str(colr)+str(colg)+str(colb)})
-
-            
         tes3convversion = 0
         jsonfilename = files[:-4]+".json"
         if deletemodjson and os.path.isfile(str(jsonfilename)):
@@ -705,7 +774,7 @@ masterintdict = dict(sorted(masterintdict.items()))
 intcounter = 1
 cyclecounter = 1
 totalints= len(masterintdict)
-mastermoddict = dict(sorted(mastermoddict.items()))
+#mastermoddict = dict(sorted(mastermoddict.items()))
 
 html_body = ""
 html_int_body = ""
@@ -716,11 +785,7 @@ html_allpage_navbar_start = """
 <div class="flex-container">
 <h2 class="logo"><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Morrowind Modmapper """+str(version)+"""</a></h2>"""
 
-html_mainpage_navbar_mid = """Last ran on """+str(generationdate)+""", mapped """+str(len(esplist))+""" files, """+str(totalcells)+""" exterior and """+str(totalints)+""" interior cells."""
-# if excludecounter > 0:
-    # html_mainpage_navbar_mid += """ Skipped """+str(excludecounter)+""" files on the exclude list. """
-# if failcounter > 0:
-    # html_mainpage_navbar_mid += """ Failed to convert """+str(failcounter)+""" mods."""+str(failedmodlist)
+html_mainpage_navbar_mid = """Mapped """+str(len(esplist))+""" files, """+str(totalcells)+""" exterior and """+str(totalints)+""" interior cells."""
 
 html_intextpage_navbar_mid = """    <input type="text" id="intextinput" onkeyup="intextsearch()" placeholder="Filter cells or mods.. (wait for page load!)" title="Type something">"""
 
@@ -731,18 +796,22 @@ html_allpage_navbar_end = """
       <li><a href="index.html#map["""+str(midvaluex)+""", """+str(midvaluey)+"""]" title="jump to map center (more or less)">Map</a></li>
       <li><a href="modmapper_interiors.html" title="open page of Interior cells">Interiors</a></li>
       <li><a href="modmapper_exteriors.html" title="open page of Exterior cells">Exteriors</a></li>
-      <li><a href="modmapper_mods.html" title="open mod list">Mods</a></li>
+      <li><a href="modmapper_mods.html" title="open mod list page">Mods</a></li>
+      <li>||</li>
       <li><a href="modmapper_about.html" title="about modmapper">About</a></li>
-      <li><a href="https://www.nexusmods.com/morrowind/mods/53069" title="NexusMods mod page (new tab)" target="_blank">NexusMods</a></li>
-      <li><a href="https://github.com/acidzebra/modmapper" title="Modmapper GitHub page (new tab)" target="_blank">Github</a></li>
+      <li>||</li>
+      <li><div class="programlink"><a href="https://www.nexusmods.com/morrowind/mods/53069" title="go to modmapper NexusMods mod page (new tab)" target="_blank">NexusMods</a></div></li>
+      <li><div class="programlink"><a href="https://github.com/acidzebra/modmapper" title="go to modmapper GitHub page (new tab)" target="_blank">Github</a></div></li>
     </ul>
   </div>
 </nav>
 """
 
-
-
-
+about_page_gendetails = """
+<h2> Current Page Details</h2>
+<p>Page generated on """+str(generationdate)+""", examined """+str(len(esplist))+""" files. </p>
+<p>Failed to convert """+str(failcounter)+""" mods:"""+str(failedmodlist)+"""</p>
+"""
 
 
 while tablerows < tablelength:
@@ -786,7 +855,7 @@ while tablerows < tablelength:
                         listofzipmods = myzipdict[allthezips]
                         #go through each individual mod and try to match to the outer loop mod we started with
                         for individualmods in listofzipmods:
-                            if str(bunchofmods).lower() in str(individualmods).lower() or str(individualmods).lower() in str(bunchofmods).lower() and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
+                            if (str(bunchofmods).lower() in str(individualmods).lower() or str(individualmods).lower() in str(bunchofmods).lower()) and str(bunchofmods) != "Morrowind.esm" and str(bunchofmods) != "Bloodmoon.esm" and str(bunchofmods) != "Tribunal.esm":
                                 foundthemod = True
                                 nexusmodslink = None
                                 try:
@@ -850,8 +919,6 @@ while tablerows < tablelength:
 table.append("""<table>\n""")
 table.reverse()
 
-
-
 print("generating and linking interior list for "+str(totalints)+" interior cells.")
 for items in masterintdict:
     if cyclecounter > 499:
@@ -880,7 +947,7 @@ for items in masterintdict:
             listofzipmods = myzipdict[allthezips]
             #go through each individual mod and try to match to the outer loop mod we started with
             for individualmods in listofzipmods:
-                if str(bunchofmods).lower() in str(individualmods).lower() or str(individualmods).lower() in str(bunchofmods).lower() and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
+                if (str(bunchofmods).lower() in str(individualmods).lower() or str(individualmods).lower() in str(bunchofmods).lower()) and bunchofmods != "Morrowind.esm" and bunchofmods != "Bloodmoon.esm" and bunchofmods != "Tribunal.esm":
                     foundthemod = True
                     nexusmodslink = None
                     try:
@@ -896,10 +963,10 @@ for items in masterintdict:
                 break
         bunchofmods.replace(".", ",")
         if foundthemod:
-            intcelldata += """<a href=\"modmapper_mods.html#"""+str(bunchofmods).lstrip()+"""\" id=\""""+str(bunchofmods).lstrip()+"""\">"""+str(bunchofmods).lstrip()+"""</a> """
+            intcelldata += """<a href=\"modmapper_mods.html#"""+str(bunchofmods).lstrip()+"""\" id=\""""+str(bunchofmods).lstrip()+"""\">"""+str(bunchofmods).lstrip()+"""</a>"""
         else:
             intcelldata += str(bunchofmods)+""" """
-    formattedintlist += """<tr><td><b>"""+str(items)+"""</b></td><td>"""+str(modcount)+"""</td><td>"""+str(intcelldata)+"""</td></tr>\n"""
+    formattedintlist += """<tr><td><b>"""+str(items)+"""</b></td><td>"""+str(modcount)+"""</td><td>"""+str(intcelldata)+"""</td></tr>"""
     intcounter += 1
 formattedintlist += intexttableclose 
 
@@ -922,7 +989,7 @@ for myfiles in finalesplist:
         listofzipmods = myzipdict[allthezips]
         #go through each individual mod and try to match to the outer loop mod we started with
         for individualmods in listofzipmods:
-            if str(myfiles).lower() in str(individualmods).lower() or str(individualmods).lower() in str(myfiles).lower() and myfiles != "Morrowind.esm" and myfiles != "Bloodmoon.esm" and myfiles != "Tribunal.esm":
+            if (str(myfiles).lower() in str(individualmods).lower() or str(individualmods).lower() in str(myfiles).lower()) and myfiles != "Morrowind.esm" and myfiles != "Bloodmoon.esm" and myfiles != "Tribunal.esm":
                 foundthemod = True
                 modzipfile = str(allthezips)
                 try:
@@ -992,12 +1059,12 @@ if splitpages:
 # about page
     about_body = ""
     about_body += html_allpage_navbar_start
-    about_body += html_modpage_navbar_mid
+    about_body += html_mainpage_navbar_mid
     about_body += html_allpage_navbar_end
-    about_body += """<br><br><br><br><br><br>"""
     about_body += about_page_top
     about_body += version_history
     about_body += about_page_bottom
+    about_body += about_page_gendetails
     about_body = html_header+about_body+html_footer
     html_file= open("modmapper_about.html","w")
     html_file.write(about_body)
